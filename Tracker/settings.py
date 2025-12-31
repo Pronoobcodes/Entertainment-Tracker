@@ -10,12 +10,12 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
+import os
 from pathlib import Path
-from re import S, U
+from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'main',
+    'users',
 ]
 
 MIDDLEWARE = [
@@ -125,5 +126,11 @@ STATICFILES_DIRS = [
 
 STATIC_ROOT = BASE_DIR / "assets"
 
-TMDB_BEARER_TOKEN = 
-MAL_CLIENT_ID = 
+load_dotenv()
+
+TMDB_BEARER_TOKEN = os.getenv('TMDB_BEARER_TOKEN')
+MAL_CLIENT_ID = os.getenv('MAL_CLIENT_ID')
+MAL_CLIENT_SECRET = os.getenv('MAL_CLIENT_SECRET')
+
+LOGIN_REDIRECT_URL = 'home'
+LOGOUT_REDIRECT_URL = 'login'

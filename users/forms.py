@@ -1,14 +1,14 @@
 from django.contrib.auth.forms import UserCreationForm, SetPasswordForm
-from .models import Customer
+from .models import CustomUser
 
-class CustomerRegistrationForm(UserCreationForm):
+class CustomRegistrationForm(UserCreationForm):
     class Meta:
-        model = Customer
-        fields = ['username', 'full_name', 'email', 'address', 'password1', 'password2']
+        model = CustomUser
+        fields = ['username', 'full_name', 'email', 'password1', 'password2']
 
 class ChangePasswordForm(SetPasswordForm):
     class Meta:
-        model = Customer
+        model = CustomUser
         fields =  ['new_password1', 'new_password2']
 
     def __init__(self, *args, **kwargs):
