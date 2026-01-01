@@ -35,3 +35,13 @@ def get_book_details(external_id):
         "release_year": info.get("publishedDate", "")[:4],
         "poster": info.get("imageLinks", {}).get("thumbnail", ""),
     }
+
+def get_popular_books(genre=None, year=None):
+    query = "bestseller"
+
+    if genre:
+        query += f"+subject:{genre}"
+    if year:
+        query += f"+inpublisher:{year}"
+
+    return fetch_books(query)

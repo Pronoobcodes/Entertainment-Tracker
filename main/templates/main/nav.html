@@ -1,9 +1,37 @@
-<nav class="navbar navbar-dark px-4">
-        <a class="navbar-brand fw-bold" href="/">🎬 Entertainment Tracker</a>
+<nav class="navbar navbar-dark px-4 navbar-expand-lg">
+    <a class="navbar-brand fw-bold" href="/">🎬 Entertainment Tracker</a>
 
-        <form class="d-flex" method="get">
-            <input class="form-control search-input me-2" type="search" name="q" placeholder="Search movies, anime, books..." value="{{ query }}" >
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="nav">
+
+        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'movies' %}">Movies</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'series' %}">Series</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'anime' %}">Anime</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'books' %}">Books</a>
+            </li>
+        </ul>
+
+        <form class="d-flex" method="get" action="{% url 'home' %}">
+            <input
+                class="form-control search-input me-2"
+                type="search"
+                name="q"
+                placeholder="Search..."
+                value="{{ query }}"
+            >
             <button class="btn btn-danger">Search</button>
         </form>
-        
-    </nav>
+
+    </div>
+</nav>

@@ -40,3 +40,14 @@ def get_mal_details(external_id):
         "release_year": item.get("start_date", "")[:4],
         "poster": item.get("main_picture", {}).get("large", ""),
     }
+
+def get_popular_anime(genre=None, year=None):
+    params = {"order_by": "popularity", "sort": "desc"}
+
+    if genre:
+        params["genres"] = genre
+    if year:
+        params["start_date"] = f"{year}-01-01"
+
+    return fetch_mal("/anime", params)
+

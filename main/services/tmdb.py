@@ -59,3 +59,35 @@ def get_tmdb_details(external_id, media_type):
         "release_year": (item.get("release_date") or item.get("first_air_date") or "")[:4],
         "poster": (f"{IMAGE_BASE}{item['poster_path']}" if item.get("poster_path") else "" ),
     }
+
+def get_tmdb_genres(media_type="movie"):
+    url = f"{BASE_URL}/genre/{media_type}/list"
+    response = requests.get(url, headers=HEADERS)
+    response.raise_for_status()
+
+    return response.json().get("genres", [])
+
+
+def get_popular_movies(genre=None, year=None, page=1):
+    params = {
+        "sort_by": "popularity.desc",
+        "page": page,
+    }
+
+    if genre:
+        params["with_genres"] = genre
+    if year:
+        params["primary_release_year"] = year
+
+    return fetch_tmdb("/discover/movie", params)
+
+def get_popular_series(genre=None, year=None, page=1):
+    params = {"sort_by": "popularity.desc", "page": page,}
+
+    if genre:
+        params["with_genres"] = genre
+    if year:
+        params["first_air_date_year"] = year
+
+    return fetch_tmdb("/discover/tv", params)
+
