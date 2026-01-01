@@ -27,7 +27,12 @@ MANIFEST
 venv/
 ENV/
 env/
+.env/
+.env
 .venv
+# Environment files
+**/.env
+**/.env*
 
 # Django
 *.log
