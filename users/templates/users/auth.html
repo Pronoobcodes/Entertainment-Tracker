@@ -13,7 +13,7 @@
         {% if page == 'login' %}
             Login to track your movies & anime
         {% else %}
-            Create your MovieBox account
+            Create your Tracker account
         {% endif %}
     </p>
 
@@ -32,6 +32,7 @@
         {% else %}
             {% for field in form %}
                 <div class="mb-3">
+                    <label for="{{ field.name }}">{{ field.label }}</label>
                     {{ field }}
                     {% if field.errors %}
                         <small class="text-danger">{{ field.errors }}</small>

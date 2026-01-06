@@ -91,3 +91,30 @@ def get_popular_series(genre=None, year=None, page=1):
 
     return fetch_tmdb("/discover/tv", params)
 
+
+def fetch_tmdb(endpoint, params=None):
+    if params is None:
+        params = {}
+
+    response = requests.get(f"{BASE_URL}{endpoint}", headers=HEADERS, params=params, timeout=10)
+    response.raise_for_status()
+    data = response.json()
+
+    results = []
+
+    for item in data.get("results", []):
+        media_type = item.get("media_type")
+
+        if not media_type:
+            media_type = "movie" if "title" in item else "tv"
+
+        results.append({
+            "source": "tmdb",
+            "external_id": item["id"],
+            "title": item.get("title") or item.get("name"),
+            "media_type": media_type,
+            "release_year": (item.get("release_date") or item.get("first_air_date") or "")[:4],
+            "poster": (f"{IMAGE_BASE}{item['poster_path']}" if item.get("poster_path") else ""), 
+        })
+
+    return results

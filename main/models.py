@@ -65,3 +65,5 @@ class UserMedia(models.Model):
 
     def __str__(self):
         return f"{self.user.username} → {self.media.title}"
+
+    

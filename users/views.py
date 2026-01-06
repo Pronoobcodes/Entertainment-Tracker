@@ -16,7 +16,23 @@ def register(request):
             login(request, user)
             return redirect('home')
 
-    return render(request, 'auth/auth.html', {'form': form,'page': 'register'})
+    return render(request, 'users/auth.html', {'form': form,'page': 'register'})
+
+
+def login_view(request):
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+
+        user = authenticate(request, username=username, password=password)
+
+        if user is not None:
+            login(request, user)
+            return redirect('home')
+        else:
+            messages.error(request, 'Invalid username or password.')
+
+    return render(request, 'users/auth.html', {'page': 'login'})
 
 
 def change_password(request):
@@ -33,26 +49,9 @@ def change_password(request):
                     messages.error(request, ', '.join([str(e) for e in error]))
         else:
             form = ChangePasswordForm(user=request.user)
-        return render(request, 'custom_auth/change_password.html', {'form': form})
+        return render(request, 'users/password.html', {'form': form})
     messages.error(request, 'You need to be logged in to change your password.')
     return redirect('login')
-
-
-def login_view(request):
-    if request.method == 'POST':
-        username = request.POST.get('username')
-        password = request.POST.get('password')
-
-        user = authenticate(request, username=username, password=password)
-
-        if user is not None:
-            login(request, user)
-            return redirect('home')
-        else:
-            messages.error(request, 'Invalid username or password.')
-
-    return render(request, 'auth/login.html', {'page': 'login'})
-
 
 
 def logout_view(request):
@@ -73,6 +72,6 @@ def update_user(request):
             user.save()
             messages.success(request, 'Your profile has been updated successfully.')
             return redirect('home') 
-        return render(request, 'custom_auth/update_user.html', {'user': request.user})
+        return render(request, 'users/update_user.html', {'user': request.user})
     messages.error(request, 'You need to be logged in to update your profile.')
     return redirect('login')

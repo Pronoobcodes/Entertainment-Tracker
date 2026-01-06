@@ -45,3 +45,33 @@ def get_popular_books(genre=None, year=None):
         query += f"+inpublisher:{year}"
 
     return fetch_books(query)
+
+
+def fetch_books(query, start_index=0, max_results=20):
+    params = {
+        "q": query,
+        "startIndex": start_index,
+        "maxResults": max_results,
+    }
+
+    response = requests.get(BASE_URL, params=params, timeout=10)
+    response.raise_for_status()
+
+    data = response.json()
+    results = []
+
+    for item in data.get("items", []):
+        volume = item["volumeInfo"]
+
+        results.append({
+            "source": "books",
+            "external_id": item["id"],
+            "title": volume.get("title"),
+            "media_type": "book",
+            "release_year": (
+                volume.get("publishedDate", "")[:4]
+            ),
+            "poster": volume.get("imageLinks", {}).get("thumbnail", ""),
+        })
+
+    return results

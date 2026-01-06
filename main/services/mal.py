@@ -51,3 +51,32 @@ def get_popular_anime(genre=None, year=None):
 
     return fetch_mal("/anime", params)
 
+
+def fetch_mal(endpoint, params=None):
+    if params is None:
+        params = {}
+
+    headers = {
+        "X-MAL-CLIENT-ID": settings.MAL_CLIENT_ID,
+    }
+
+    response = requests.get(f"{BASE_URL}{endpoint}", headers=headers, params=params, timeout=10)
+    response.raise_for_status()
+
+    data = response.json()
+    results = []
+
+    for item in data.get("data", []):
+        anime = item["node"]
+
+        results.append({
+            "source": "mal",
+            "external_id": anime["id"],
+            "title": anime["title"],
+            "media_type": "anime",
+            "release_year": (anime.get("start_date", "")[:4]),
+            "poster": anime.get("main_picture", {}).get("medium", ""),
+        })
+
+    return results
+
