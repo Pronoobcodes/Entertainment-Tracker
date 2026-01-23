@@ -10,44 +10,50 @@ HEADERS = {
 }
 
 
-def search_tmdb(query):
-    url = f"{BASE_URL}/search/multi"
-    params = {
-        "query": query,
-        "language": "en-US",
-    }
-
-    response = requests.get(url, headers=HEADERS, params=params)
+def fetch_tmdb(endpoint, params=None):
+    response = requests.get(
+        f"{BASE_URL}{endpoint}",
+        headers=HEADERS,
+        params=params or {},
+        timeout=10,
+    )
     response.raise_for_status()
-    data = response.json()
+    return response.json()
 
-    results = []
 
-    for item in data.get("results", []):
-        if item.get("media_type") not in ("movie", "tv"):
-            continue
+def search_tmdb(query, page=1):
+    return fetch_tmdb(
+        "/search/multi",
+        {
+            "query": query,
+            "page": page,
+            "language": "en-US",
+        }
+    )
 
-        results.append({
-            "source": "tmdb",
-            "external_id": item["id"],
-            "title": item.get("title") or item.get("name"),
-            "media_type": item["media_type"],
-            "release_year": (
-                item.get("release_date")
-                or item.get("first_air_date")
-                or ""
-            )[:4],
-            "poster": (f"{IMAGE_BASE}{item['poster_path']}" if item.get("poster_path") else ""),
-        })
 
-    return results
+def normalize_tmdb(item, media_type=None):
+    return {
+        "source": "tmdb",
+        "external_id": item["id"],
+        "title": item.get("title") or item.get("name"),
+        "media_type": media_type or item.get("media_type"),
+        "release_year": (
+            item.get("release_date")
+            or item.get("first_air_date")
+            or ""
+        )[:4],
+        "poster": (
+            f"{IMAGE_BASE}{item['poster_path']}"
+            if item.get("poster_path")
+            else ""
+        ),
+    }
 
 
 def get_tmdb_details(external_id, media_type):
     url = f"{BASE_URL}/{media_type}/{external_id}"
-    params = {"language": "en-US"}
-
-    response = requests.get(url, headers=HEADERS, params=params)
+    response = requests.get(url, headers=HEADERS, timeout=10)
     response.raise_for_status()
     item = response.json()
 
@@ -57,64 +63,41 @@ def get_tmdb_details(external_id, media_type):
         "title": item.get("title") or item.get("name"),
         "media_type": media_type,
         "release_year": (item.get("release_date") or item.get("first_air_date") or "")[:4],
-        "poster": (f"{IMAGE_BASE}{item['poster_path']}" if item.get("poster_path") else "" ),
+        "poster": f"{IMAGE_BASE}{item['poster_path']}" if item.get("poster_path") else "",
+        "overview": item.get("overview"),
+        "rating": item.get("vote_average"),
+        "genres": [g["name"] for g in item.get("genres", [])],
+        "duration": (
+            item.get("runtime")
+            or (item.get("episode_run_time") or [None])[0]
+        ),
+        "status": item.get("status", "Released"),
     }
 
-def get_tmdb_genres(media_type="movie"):
-    url = f"{BASE_URL}/genre/{media_type}/list"
-    response = requests.get(url, headers=HEADERS)
-    response.raise_for_status()
 
-    return response.json().get("genres", [])
+def get_tmdb_genres(media_type):
+    return fetch_tmdb(f"/genre/{media_type}/list").get("genres", [])
 
 
 def get_popular_movies(genre=None, year=None, page=1):
-    params = {
-        "sort_by": "popularity.desc",
-        "page": page,
-    }
+    params = {"sort_by": "popularity.desc", "page": page}
 
     if genre:
         params["with_genres"] = genre
     if year:
         params["primary_release_year"] = year
 
-    return fetch_tmdb("/discover/movie", params)
+    data = fetch_tmdb("/discover/movie", params)
+    return [normalize_tmdb(item, "movie") for item in data.get("results", [])]
+
 
 def get_popular_series(genre=None, year=None, page=1):
-    params = {"sort_by": "popularity.desc", "page": page,}
+    params = {"sort_by": "popularity.desc", "page": page}
 
     if genre:
         params["with_genres"] = genre
     if year:
         params["first_air_date_year"] = year
 
-    return fetch_tmdb("/discover/tv", params)
-
-
-def fetch_tmdb(endpoint, params=None):
-    if params is None:
-        params = {}
-
-    response = requests.get(f"{BASE_URL}{endpoint}", headers=HEADERS, params=params, timeout=10)
-    response.raise_for_status()
-    data = response.json()
-
-    results = []
-
-    for item in data.get("results", []):
-        media_type = item.get("media_type")
-
-        if not media_type:
-            media_type = "movie" if "title" in item else "tv"
-
-        results.append({
-            "source": "tmdb",
-            "external_id": item["id"],
-            "title": item.get("title") or item.get("name"),
-            "media_type": media_type,
-            "release_year": (item.get("release_date") or item.get("first_air_date") or "")[:4],
-            "poster": (f"{IMAGE_BASE}{item['poster_path']}" if item.get("poster_path") else ""), 
-        })
-
-    return results
+    data = fetch_tmdb("/discover/tv", params)
+    return [normalize_tmdb(item, "tv") for item in data.get("results", [])]

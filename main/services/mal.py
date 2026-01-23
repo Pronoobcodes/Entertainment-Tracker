@@ -4,33 +4,50 @@ from django.conf import settings
 BASE_URL = "https://api.myanimelist.net/v2"
 
 
-def search_mal(query):
-    headers = {"X-MAL-CLIENT-ID": settings.MAL_CLIENT_ID}
-    url = f"{BASE_URL}/anime"
-    params = {"q": query, "limit": 10}
+def fetch_mal(endpoint, params=None):
+    response = requests.get(
+        f"{BASE_URL}{endpoint}",
+        headers={"X-MAL-CLIENT-ID": settings.MAL_CLIENT_ID},
+        params=params or {},
+        timeout=10,
+    )
+    response.raise_for_status()
+    return response.json()
 
-    data = requests.get(url, headers=headers, params=params).json()
-    results = []
 
-    for item in data.get("data", []):
-        node = item["node"]
-        results.append({
+def search_mal(query, limit=10):
+    data = fetch_mal(
+        "/anime",
+        {"q": query, "limit": limit},
+    )
+
+    return [
+        {
             "source": "mal",
             "external_id": node["id"],
             "title": node["title"],
             "media_type": "anime",
-            "release_year": None,
-            "poster": node.get("main_picture", {}).get("large", ""),
-        })
+            "release_year": node.get("start_date", "")[:4],
+            "poster": node.get("main_picture", {}).get("medium", ""),
+        }
+        for item in data.get("data", [])
+        for node in [item["node"]]
+    ]
 
-    return results
+
+def normalize_mal(anime):
+    return {
+        "source": "mal",
+        "external_id": anime["id"],
+        "title": anime["title"],
+        "media_type": "anime",
+        "release_year": anime.get("start_date", "")[:4],
+        "poster": anime.get("main_picture", {}).get("medium", ""),
+    }
 
 
 def get_mal_details(external_id):
-    headers = {"X-MAL-CLIENT-ID": settings.MAL_CLIENT_ID}
-    url = f"{BASE_URL}/anime/{external_id}"
-
-    item = requests.get(url, headers=headers).json()
+    item = fetch_mal(f"/anime/{external_id}")
 
     return {
         "source": "mal",
@@ -39,44 +56,29 @@ def get_mal_details(external_id):
         "media_type": "anime",
         "release_year": item.get("start_date", "")[:4],
         "poster": item.get("main_picture", {}).get("large", ""),
+        "overview": item.get("synopsis"),
+        "rating": item.get("mean"),
+        "genres": [g["name"] for g in item.get("genres", [])],
+        "duration": item.get("average_episode_duration"),
+        "status": item.get("status", "released").replace("_", " ").title(),
     }
 
-def get_popular_anime(genre=None, year=None):
-    params = {"order_by": "popularity", "sort": "desc"}
 
-    if genre:
-        params["genres"] = genre
-    if year:
-        params["start_date"] = f"{year}-01-01"
-
-    return fetch_mal("/anime", params)
+def get_mal_genres():
+    data = fetch_mal("/genres/anime")
+    return [genre["name"] for genre in data.get("data", [])]
 
 
-def fetch_mal(endpoint, params=None):
-    if params is None:
-        params = {}
+def get_popular_anime(genre=None, year=None, page=1, limit=20):
+    offset = (page - 1) * limit
 
-    headers = {
-        "X-MAL-CLIENT-ID": settings.MAL_CLIENT_ID,
-    }
+    data = fetch_mal(
+        "/anime/ranking",
+        {
+            "ranking_type": "bypopularity",
+            "limit": limit,
+            "offset": offset,
+        },
+    )
 
-    response = requests.get(f"{BASE_URL}{endpoint}", headers=headers, params=params, timeout=10)
-    response.raise_for_status()
-
-    data = response.json()
-    results = []
-
-    for item in data.get("data", []):
-        anime = item["node"]
-
-        results.append({
-            "source": "mal",
-            "external_id": anime["id"],
-            "title": anime["title"],
-            "media_type": "anime",
-            "release_year": (anime.get("start_date", "")[:4]),
-            "poster": anime.get("main_picture", {}).get("medium", ""),
-        })
-
-    return results
-
+    return [normalize_mal(item["node"]) for item in data.get("data", [])]

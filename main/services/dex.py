@@ -1,119 +1,39 @@
 import requests
+from requests.adapters import HTTPAdapter, Retry
 
 BASE_URL = "https://api.mangadex.org"
 
-
-def search_dex(query):
-    url = f"{BASE_URL}/manga"
-    params = {"title": query, "limit": 10}
-    data = requests.get(url, params=params).json()
-    results = []
-
-    for manga in data.get("data", []):
-        attr = manga["attributes"]
-        title = attr["title"].get("en") or list(attr["title"].values())[0]
-
-        results.append({
-            "source": "mangadex",
-            "external_id": manga["id"],
-            "title": title,
-            "media_type": "manga",
-            "release_year": attr.get("year"),
-            "poster": "",
-        })
-
-    return results
+# Create a session with retries
+session = requests.Session()
+retries = Retry(total=3, backoff_factor=1, status_forcelist=[502, 503, 504])
+session.mount("https://", HTTPAdapter(max_retries=retries))
 
 
-def get_manga_details(external_id):
-    url = f"{BASE_URL}/manga/{external_id}"
-    manga = requests.get(url).json()["data"]
-    attr = manga["attributes"]
-    title = attr["title"].get("en") or list(attr["title"].values())[0]
-
-    return {
-        "source": "mangadex",
-        "external_id": external_id,
-        "title": title,
-        "media_type": "manga",
-        "release_year": attr.get("year"),
-        "poster": "",
-    }
-
-def get_chapters(external_id):
-    url = f"{BASE_URL}/chapter"
-    params = {"manga": external_id}
-    data = requests.get(url, params=params).json()
-    results = []
-
-    for chapter in data.get("data", []):
-        attr = chapter["attributes"]
-        results.append({
-            "source": "mangadex",
-            "external_id": chapter["id"],
-            "title": attr.get("title"),
-            "media_type": "chapter",
-            "release_year": attr.get("year"),
-            "poster": "",
-        })
-
-    return results
-
-def get_chapter_details(external_id):
-    url = f"{BASE_URL}/chapter/{external_id}"
-    chapter = requests.get(url).json()["data"]
-    attr = chapter["attributes"]
-
-    return {
-        "source": "mangadex",
-        "external_id": external_id,
-        "title": attr.get("title"),
-        "media_type": "chapter",
-        "release_year": attr.get("year"),
-        "poster": "",
-    }
-
-
-def get_popular_manga(genre=None, year=None, page=1, limit=20):
-    offset = (page - 1) * limit
-
-    params = {
-        "order[followedCount]": "desc",
-        "limit": limit,
-        "offset": offset,
-        "includes[]": ["cover_art"],
-        "contentRating[]": ["safe"],
-    }
-
-    if genre:
-        params["includedTags[]"] = genre
-
-    if year:
-        params["year"] = year
-
-    response = requests.get(f"{BASE_URL}/manga", params=params)
-    response.raise_for_status()
-
-    return normalize_mangadex(response.json())
+def fetch_mangadex(endpoint, params=None):
+    try:
+        response = session.get(f"{BASE_URL}{endpoint}", params=params or {}, timeout=10)
+        response.raise_for_status()
+        return response.json()
+    except requests.RequestException as e:
+        print(f"MangaDex API request failed: {e}")
+        return {"data": []}
 
 
 def normalize_mangadex(data):
     results = []
-
     for item in data.get("data", []):
-        attrs = item["attributes"]
-
-        title = next(iter(attrs["title"].values()), "Unknown")
+        attrs = item.get("attributes", {})
+        title = next(iter(attrs.get("title", {}).values()), "Unknown")
 
         cover = ""
-        for rel in item["relationships"]:
+        for rel in item.get("relationships", []):
             if rel["type"] == "cover_art":
                 cover = f"https://uploads.mangadex.org/covers/{item['id']}/{rel['attributes']['fileName']}"
                 break
 
         results.append({
             "source": "mangadex",
-            "external_id": item["id"],
+            "external_id": item.get("id"),
             "title": title,
             "media_type": "manga",
             "release_year": attrs.get("year"),
@@ -123,8 +43,52 @@ def normalize_mangadex(data):
     return results
 
 
-def get_manga_genres():
-    response = requests.get(f"{BASE_URL}/manga/tag")
-    response.raise_for_status()
+def search_dex(query, limit=10):
+    data = fetch_mangadex("/manga", {"title": query, "limit": limit})
+    return normalize_mangadex(data)
 
-    return response.json().get("data", [])
+
+def get_manga_details(external_id):
+    data = fetch_mangadex(f"/manga/{external_id}")
+    manga = data.get("data")
+    if not manga:
+        return None
+
+    attr = manga.get("attributes", {})
+    title = next(iter(attr.get("title", {}).values()), "Unknown")
+    genres = [tag["attributes"]["name"]["en"] for tag in attr.get("tags", []) if "en" in tag["attributes"]["name"]]
+
+    return {
+        "source": "mangadex",
+        "external_id": external_id,
+        "title": title,
+        "media_type": "manga",
+        "release_year": attr.get("year"),
+        "poster": "", 
+        "overview": attr.get("description", {}).get("en"),
+        "genres": genres,
+        "status": attr.get("status", "released").title(),
+        "duration": None,
+    }
+
+
+def get_popular_manga(genre=None, year=None, page=1, limit=20):
+    offset = (page - 1) * limit
+    params = {
+        "order[followedCount]": "desc",
+        "limit": limit,
+        "offset": offset,
+        "includes[]": ["cover_art"],
+        "contentRating[]": ["safe"],
+    }
+    if genre:
+        params["includedTags[]"] = genre
+    if year:
+        params["year"] = year
+
+    data = fetch_mangadex("/manga", params)
+    return normalize_mangadex(data)
+
+
+def get_manga_genres():
+    return fetch_mangadex("/manga/tag").get("data", [])

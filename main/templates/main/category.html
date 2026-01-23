@@ -8,35 +8,46 @@
     </h3>
 
     
-    <form method="get" class="row g-2 mb-4">
+    <form method="get" class="row g-2 mb-3">
+        <div class="col-auto">
+            <select name="genre" class="form-select">
+                <option value="">All Genres</option>
+                {% for g in genres %}
+                    <option value="{{ g }}" {% if g == selected_genre %}selected{% endif %}>{{ g }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-auto">
+            <select name="year" class="form-select">
+                <option value="">All Years</option>
+                {% for y in years %}
+                    <option value="{{ y }}" {% if y == selected_year %}selected{% endif %}>{{ y }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-auto">
+            <button class="btn btn-primary" type="submit">Filter</button>
+        </div>
+    </form>
 
-    <div class="col-md-3">
-        <select name="genre" class="form-select">
-            <option value="">All Genres</option>
-            {% for g in genres %}
-                <option value="{{ g.id }}"
-                    {% if genre == g.id|stringformat:"s" %}selected{% endif %}
-                >
-                    {{ g.name }}
-                </option>
-            {% endfor %}
-        </select>
+    <div class="row g-4">
+        {% for item in results %}
+        <div class="col-6 col-sm-4 col-md-3 col-lg-2">
+            <div class="movie-card position-relative">
+                {% if item.poster %}
+                    <img src="{{ item.poster }}" class="w-100 poster">
+                {% else %}
+                    <div class="poster bg-secondary"></div>
+                {% endif %}
+                <span class="badge bg-danger badge-source">{{ item.source|upper }}</span>
+                <div class="movie-info">
+                    <div class="movie-title">{{ item.title }}</div>
+                    <div class="movie-meta">{{ item.media_type|title }}{% if item.release_year %} • {{ item.release_year }}{% endif %}</div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
     </div>
-
-    <div class="col-md-2">
-        <select name="year" class="form-select">
-            <option value="">Year</option>
-            {% for y in years %}
-                <option value="{{ y }}">{{ y }}</option>
-            {% endfor %}
-        </select>
-    </div>
-
-    <div class="col-md-2">
-        <button class="btn btn-danger w-100">Filter</button>
-    </div>
-
-</form>
 
     <div id="results" class="row g-4">
         {% for item in results %}
