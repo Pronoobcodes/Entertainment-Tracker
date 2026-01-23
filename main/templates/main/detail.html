@@ -1,0 +1,70 @@
+{% extends "main/body.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <!-- Poster -->
+        <div class="col-md-4">
+            {% if item.poster %}
+                <img src="{{ item.poster }}" class="img-fluid rounded shadow">
+            {% else %}
+                <div class="bg-secondary rounded w-100" style="height:400px;"></div>
+            {% endif %}
+
+            <div class="mt-3">
+                <form method="POST" action="{% url 'add_to_library' item.source item.external_id %}">
+                    {% csrf_token %}
+                    <button class="btn btn-warning w-100">Add to Library</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Details -->
+        <div class="col-md-8">
+            <h2 class="fw-bold">{{ item.title }}</h2>
+
+            <p class="text-muted mb-1">
+                {{ item.media_type|title }}
+                {% if item.release_year %}• {{ item.release_year }}{% endif %}
+                {% if item.status %}• {{ item.status }}{% endif %}
+            </p>
+
+            {% if item.rating %}
+                <p><strong>Rating:</strong> {{ item.rating }}/10</p>
+            {% endif %}
+
+            {% if item.duration %}
+                <p>
+                    <strong>
+                        {% if item.media_type in 'movie' 'tv' %}
+                            Duration:
+                        {% elif item.media_type == 'anime' %}
+                            Episode Duration:
+                        {% elif item.media_type == 'manga' %}
+                            Chapters:
+                        {% endif %}
+                    </strong>
+                    {{ item.duration }}
+                </p>
+            {% endif %}
+
+            {% if item.episodes %}
+                <p><strong>Episodes:</strong> {{ item.episodes }}</p>
+            {% endif %}
+
+            {% if item.genres %}
+                <p><strong>Genres:</strong>
+                    {% for g in item.genres %}
+                        <span class="badge bg-secondary">{{ g }}</span>
+                    {% endfor %}
+                </p>
+            {% endif %}
+
+            {% if item.overview %}
+                <h5 class="mt-3">Overview</h5>
+                <p>{{ item.overview }}</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock content %}

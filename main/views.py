@@ -1,4 +1,5 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
+from django.contrib.auth.decorators import login_required
 from .models import Media, UserMedia
 from .services.search import search_all
 from .services.tmdb import get_popular_movies, get_popular_series, get_tmdb_genres, get_tmdb_details
@@ -84,7 +85,7 @@ def category_view(request, category):
     return render(request, "main/category.html", context)
 
 
-
+@login_required(login_url='login')
 def detail_view(request, source, external_id, media_type=None):
     item = get_details(source, external_id, media_type)
 
@@ -95,6 +96,7 @@ def detail_view(request, source, external_id, media_type=None):
     )
 
 
+@login_required(login_url='login')
 def add_media(request, source, external_id):
     media = Media.objects.filter(source=source, external_id=external_id).first()
 
@@ -106,8 +108,10 @@ def add_media(request, source, external_id):
         user=request.user,
         media=media
     )
+    return redirect('detail', source=source, external_id=external_id)
 
 
+@login_required(login_url='login')
 def add_to_library(request, source, external_id):
     media = Media.objects.filter(source=source, external_id=external_id).first()
 
@@ -118,6 +122,7 @@ def add_to_library(request, source, external_id):
         user=request.user,
         media=media
     )
+    return redirect('detail', source=source, external_id=external_id)
 
 
 def fetch_and_save_from_api(source, external_id, media_type=None):

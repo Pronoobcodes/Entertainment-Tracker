@@ -1,10 +1,10 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
-from .models import CustomUser
+from django.utils.http import url_has_allowed_host_and_scheme
+from django.conf import settings
+from urllib.parse import urlparse
 from .forms import CustomRegistrationForm, ChangePasswordForm
-from django.contrib.auth.decorators import login_required
-from django.contrib.auth import update_session_auth_hash
 
 
 def register(request):
@@ -12,28 +12,38 @@ def register(request):
     if request.method == 'POST':
         form = CustomRegistrationForm(request.POST)
         if form.is_valid():
-            user = form.save()
+            user = form.save(commit=False)
+            user.email = user.email.lower()
+            user.save()
             login(request, user)
             return redirect('home')
+        messages.error(request, 'Registration failed. Please correct the errors below.')
 
     return render(request, 'users/auth.html', {'form': form,'page': 'register'})
 
 
 def login_view(request):
+    if request.user.is_authenticated:
+        return redirect('home')
+
     if request.method == 'POST':
-        username = request.POST.get('username')
+        email = request.POST.get('email')
         password = request.POST.get('password')
 
-        user = authenticate(request, username=username, password=password)
+        user = authenticate(request, email=email, password=password)
 
         if user is not None:
-            login(request, user)
+            login(request, user, backend='users.backends.EmailBackend')
+            
+            # Get next from POST and validate it
+            next_url = request.POST.get('next', '')
+            if next_url and len(next_url) <= 500 and url_has_allowed_host_and_scheme(next_url, allowed_hosts=None):
+                return redirect(next_url)
             return redirect('home')
         else:
-            messages.error(request, 'Invalid username or password.')
+            messages.error(request, 'Invalid email or password.')
 
     return render(request, 'users/auth.html', {'page': 'login'})
-
 
 def change_password(request):
     if request.user.is_authenticated:

@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 
 import os
 from pathlib import Path
+from re import A
 from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -71,8 +72,14 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'Tracker.wsgi.application'
 
-USER_AUTHENTICATION_MODEL = 'users.CustomUser'
+AUTH_USER_MODEL = 'users.CustomUser'
 
+LOGIN_URL = 'login'
+
+AUTHENTICATION_BACKENDS = [
+    'users.backends.EmailBackend',
+    'django.contrib.auth.backends.ModelBackend',
+]
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
@@ -132,5 +139,5 @@ TMDB_BEARER_TOKEN = os.getenv('TMDB_BEARER_TOKEN')
 MAL_CLIENT_ID = os.getenv('MAL_CLIENT_ID')
 MAL_CLIENT_SECRET = os.getenv('MAL_CLIENT_SECRET')
 
-LOGIN_REDIRECT_URL = 'home'
-LOGOUT_REDIRECT_URL = 'login'
+
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
