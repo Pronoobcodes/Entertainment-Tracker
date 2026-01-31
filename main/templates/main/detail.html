@@ -50,6 +50,14 @@
                 <h5 class="mt-4">Overview</h5>
                 <p class="overview-text">{{ item.overview }}</p>
             {% endif %}
+            {% if item.media_type == "movie" %}
+                <p><strong>Duration:</strong> {{ item.duration }} mins</p>
+            {% elif item.media_type == "tv" %}
+                <p><strong>Episodes:</strong> {{ item.episodes }}</p>
+                {% if item.duration %}
+                    <p><strong>Episode Runtime:</strong> {{ item.duration }} mins</p>
+                {% endif %}
+            {% endif %}
         </div>
 
     </div>

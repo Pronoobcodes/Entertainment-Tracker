@@ -34,20 +34,26 @@ def search_anime(query):
 
 
 def get_mal_details(external_id):
-    anime = mal_request(f"/anime/{external_id}")
+    data = mal_request(
+        f"/anime/{external_id}",
+        params={
+            "fields": "id,title,main_picture,synopsis,genres,mean,status,episodes"
+        }
+    )
 
     return {
         "source": "mal",
         "external_id": external_id,
-        "title": anime["title"],
+        "title": data.get("title"),
         "media_type": "anime",
-        "release_year": anime.get("start_date", "")[:4],
-        "poster": anime.get("main_picture", {}).get("large", ""),
-        "overview": anime.get("synopsis"),
-        "genres": [g["name"] for g in anime.get("genres", [])],
-        "rating": anime.get("mean"),
-        "duration": anime.get("average_episode_duration"),
-        "status": anime.get("status", "released").replace("_", " ").title(),
+        "poster": data.get("main_picture", {}).get("large", ""),
+        "release_year": None,
+        "overview": data.get("synopsis", ""),
+        "genres": [g["name"] for g in data.get("genres", [])],
+        "status": data.get("status"),
+        "rating": data.get("mean"),
+        "episodes": data.get("episodes"),
+        "duration": None,
     }
 
 

@@ -7,6 +7,7 @@ urlpatterns = [
     path("series/", views.category_view, {"category": "series"}, name="series"),
     path("anime/", views.category_view, {"category": "anime"}, name="anime"),
     path("mangas/", views.category_view, {"category": "manga"}, name="mangas"),
-    path('<str:source>/<str:external_id>/', views.detail_view, name='detail'),
+    path("<str:source>/<str:media_type>/<str:external_id>/", views.detail_view, name="tmdb_detail"),
+    path("<str:source>/<str:external_id>/", views.detail_view, name="detail"),
     path('<str:source>/<str:external_id>/add/', views.add_to_library, name='add_to_library'),
 ]

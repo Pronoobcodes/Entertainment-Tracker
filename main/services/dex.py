@@ -38,20 +38,44 @@ def search_manga(query):
 
 
 def get_manga_details(external_id):
-    data = dex_request(f"/manga/{external_id}")
-    manga = data["data"]
-    attrs = manga["attributes"]
+    res = dex_request(
+        f"/manga/{external_id}",
+        params={"includes[]": ["cover_art"]}
+    )
+
+    data = res.get("data")
+    if not data:
+        return None
+
+    attr = data.get("attributes", {})
+    title_data = attr.get("title", {})
+    title = title_data.get("en") or next(iter(title_data.values()), "")
+
+    cover = ""
+    for rel in data.get("relationships", []):
+        if rel["type"] == "cover_art":
+            cover = f"https://uploads.mangadex.org/covers/{external_id}/{rel['attributes']['fileName']}"
+            break
+
+    genres = [
+        t["attributes"]["name"]["en"]
+        for t in attr.get("tags", [])
+        if "en" in t["attributes"]["name"]
+    ]
 
     return {
-        **format_manga(manga),
-        "overview": attrs.get("description", {}).get("en"),
-        "genres": [
-            tag["attributes"]["name"]["en"]
-            for tag in attrs.get("tags", [])
-            if "en" in tag["attributes"]["name"]
-        ],
-        "status": attrs.get("status", "released").title(),
+        "source": "mangadex",
+        "external_id": external_id,
+        "title": title,
+        "media_type": "manga",
+        "poster": cover,
+        "release_year": None,
+        "overview": attr.get("description", {}).get("en", ""),
+        "genres": genres,
+        "status": attr.get("status"),
+        "rating": None,
         "duration": None,
+        "episodes": None,
     }
 
 

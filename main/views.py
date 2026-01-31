@@ -5,7 +5,7 @@ from datetime import datetime
 from .models import Media, UserMedia
 from .services.search import search_all
 from .services.details import get_details
-from .services.tmdb import get_popular_movies, get_popular_series, get_tmdb_genres
+from .services.tmdb import get_popular_movies, get_popular_series, get_tmdb_genres, tmdb_request
 from .services.mal import get_popular_anime
 from .services.dex import get_popular_manga, get_manga_genres
 
@@ -91,7 +91,6 @@ def category_view(request, category):
         "selected_year": year,
         "page": page,
     })
-
 
 
 def detail_view(request, source, external_id, media_type=None):

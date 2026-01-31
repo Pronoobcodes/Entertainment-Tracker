@@ -39,20 +39,34 @@ def search_tmdb(query):
 
 
 def get_tmdb_details(external_id, media_type):
-    item = tmdb_request(f"/{media_type}/{external_id}")
+    if media_type not in ("movie", "tv"):
+        raise ValueError("TMDB requires media_type: movie or tv")
+
+    data = tmdb_request(f"/{media_type}/{external_id}")
 
     return {
         "source": "tmdb",
         "external_id": external_id,
-        "title": item.get("title") or item.get("name"),
+        "title": data.get("title") or data.get("name"),
         "media_type": media_type,
-        "release_year": (item.get("release_date") or item.get("first_air_date") or "")[:4],
-        "poster": TMDB_IMAGE_URL + item["poster_path"] if item.get("poster_path") else "",
-        "overview": item.get("overview"),
-        "genres": [g["name"] for g in item.get("genres", [])],
-        "rating": item.get("vote_average"),
-        "duration": item.get("runtime") or (item.get("episode_run_time") or [None])[0],
-        "status": item.get("status", "Released"),
+        "poster": (
+            f"https://image.tmdb.org/t/p/w500{data['poster_path']}"
+            if data.get("poster_path") else ""
+        ),
+        "release_year": (
+            data.get("release_date", "")[:4]
+            or data.get("first_air_date", "")[:4]
+        ),
+        "overview": data.get("overview", ""),
+        "genres": [g["name"] for g in data.get("genres", [])],
+        "status": data.get("status"),
+        "rating": data.get("vote_average"),
+        "duration": (
+            data.get("runtime")  
+            or (data.get("episode_run_time") or [None])[0]  
+        ),
+
+        "episodes": data.get("number_of_episodes"),
     }
 
 
