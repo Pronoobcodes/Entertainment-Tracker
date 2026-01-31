@@ -1,14 +1,13 @@
-from main.services.tmdb import search_tmdb
-from main.services.mal import search_mal
-from main.services.dex import search_dex
-
+from .tmdb import search_tmdb
+from .mal import search_anime
+from .dex import search_manga
 
 def search_all(query):
     results = []
 
-    for func in (search_tmdb, search_mal, search_dex):
+    for search_func in (search_tmdb, search_anime, search_manga):
         try:
-            results.extend(func(query))
+            results.extend(search_func(query))
         except Exception:
             continue
 

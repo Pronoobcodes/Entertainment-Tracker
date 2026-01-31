@@ -1,94 +1,94 @@
 import requests
-from requests.adapters import HTTPAdapter, Retry
 
-BASE_URL = "https://api.mangadex.org"
-
-# Create a session with retries
-session = requests.Session()
-retries = Retry(total=3, backoff_factor=1, status_forcelist=[502, 503, 504])
-session.mount("https://", HTTPAdapter(max_retries=retries))
+DEX_BASE_URL = "https://api.mangadex.org"
 
 
-def fetch_mangadex(endpoint, params=None):
-    try:
-        response = session.get(f"{BASE_URL}{endpoint}", params=params or {}, timeout=10)
-        response.raise_for_status()
-        return response.json()
-    except requests.RequestException as e:
-        print(f"MangaDex API request failed: {e}")
-        return {"data": []}
+def dex_request(endpoint, params=None):
+    response = requests.get(
+        f"{DEX_BASE_URL}{endpoint}",
+        params=params or {},
+        timeout=10,
+    )
+    response.raise_for_status()
+    return response.json()
 
 
-def normalize_mangadex(data):
-    results = []
-    for item in data.get("data", []):
-        attrs = item.get("attributes", {})
-        title = next(iter(attrs.get("title", {}).values()), "Unknown")
+def format_manga(item):
+    attrs = item["attributes"]
+    title = next(iter(attrs["title"].values()), "Unknown")
 
-        cover = ""
-        for rel in item.get("relationships", []):
-            if rel["type"] == "cover_art":
-                cover = f"https://uploads.mangadex.org/covers/{item['id']}/{rel['attributes']['fileName']}"
-                break
-
-        results.append({
-            "source": "mangadex",
-            "external_id": item.get("id"),
-            "title": title,
-            "media_type": "manga",
-            "release_year": attrs.get("year"),
-            "poster": cover,
-        })
-
-    return results
-
-
-def search_dex(query, limit=10):
-    data = fetch_mangadex("/manga", {"title": query, "limit": limit})
-    return normalize_mangadex(data)
-
-
-def get_manga_details(external_id):
-    data = fetch_mangadex(f"/manga/{external_id}")
-    manga = data.get("data")
-    if not manga:
-        return None
-
-    attr = manga.get("attributes", {})
-    title = next(iter(attr.get("title", {}).values()), "Unknown")
-    genres = [tag["attributes"]["name"]["en"] for tag in attr.get("tags", []) if "en" in tag["attributes"]["name"]]
+    poster = ""
+    for rel in item["relationships"]:
+        if rel["type"] == "cover_art":
+            poster = f"https://uploads.mangadex.org/covers/{item['id']}/{rel['attributes']['fileName']}"
 
     return {
         "source": "mangadex",
-        "external_id": external_id,
+        "external_id": item["id"],
         "title": title,
         "media_type": "manga",
-        "release_year": attr.get("year"),
-        "poster": "", 
-        "overview": attr.get("description", {}).get("en"),
-        "genres": genres,
-        "status": attr.get("status", "released").title(),
+        "release_year": attrs.get("year"),
+        "poster": poster,
+    }
+
+
+def search_manga(query):
+    data = dex_request("/manga", {"title": query, "limit": 10})
+    return [format_manga(item) for item in data.get("data", [])]
+
+
+def get_manga_details(external_id):
+    data = dex_request(f"/manga/{external_id}")
+    manga = data["data"]
+    attrs = manga["attributes"]
+
+    return {
+        **format_manga(manga),
+        "overview": attrs.get("description", {}).get("en"),
+        "genres": [
+            tag["attributes"]["name"]["en"]
+            for tag in attrs.get("tags", [])
+            if "en" in tag["attributes"]["name"]
+        ],
+        "status": attrs.get("status", "released").title(),
         "duration": None,
     }
 
 
 def get_popular_manga(genre=None, year=None, page=1, limit=20):
     offset = (page - 1) * limit
+
     params = {
-        "order[followedCount]": "desc",
         "limit": limit,
         "offset": offset,
+        "order[followedCount]": "desc",
         "includes[]": ["cover_art"],
-        "contentRating[]": ["safe"],
     }
-    if genre:
-        params["includedTags[]"] = genre
-    if year:
-        params["year"] = year
 
-    data = fetch_mangadex("/manga", params)
-    return normalize_mangadex(data)
+    data = dex_request("/manga", params)
+
+    return [normalize_manga(item) for item in data["data"]]
+
+
+def normalize_manga(item):
+    attrs = item["attributes"]
+    title = next(iter(attrs["title"].values()), "Unknown")
+
+    cover = ""
+    for rel in item["relationships"]:
+        if rel["type"] == "cover_art":
+            cover = f"https://uploads.mangadex.org/covers/{item['id']}/{rel['attributes']['fileName']}"
+
+    return {
+        "source": "mangadex",
+        "external_id": item["id"],
+        "title": title,
+        "media_type": "manga",
+        "release_year": attrs.get("year"),
+        "poster": cover,
+    }
 
 
 def get_manga_genres():
-    return fetch_mangadex("/manga/tag").get("data", [])
+    data = dex_request("/manga/tag")
+    return data.get("data", [])

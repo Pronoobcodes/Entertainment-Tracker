@@ -1,70 +1,58 @@
 {% extends "main/body.html" %}
-
 {% block content %}
-<div class="container mt-4">
-    <div class="row">
+
+<div class="container py-5">
+    <div class="row g-4">
+
         <!-- Poster -->
         <div class="col-md-4">
-            {% if item.poster %}
-                <img src="{{ item.poster }}" class="img-fluid rounded shadow">
-            {% else %}
-                <div class="bg-secondary rounded w-100" style="height:400px;"></div>
-            {% endif %}
-
-            <div class="mt-3">
-                <form method="POST" action="{% url 'add_to_library' item.source item.external_id %}">
-                    {% csrf_token %}
-                    <button class="btn btn-warning w-100">Add to Library</button>
-                </form>
+            <div class="poster-box">
+                {% if item.poster %}
+                    <img src="{{ item.poster }}" class="img-fluid rounded shadow-lg">
+                {% else %}
+                    <div class="poster-placeholder"></div>
+                {% endif %}
             </div>
+
+            <form method="POST" action="{% url 'add_to_library' item.source item.external_id %}" class="mt-3">
+                {% csrf_token %}
+                <button class="btn btn-danger w-100">
+                    ➕ Add to Library
+                </button>
+            </form>
         </div>
 
-        <!-- Details -->
+        <!-- Info -->
         <div class="col-md-8">
-            <h2 class="fw-bold">{{ item.title }}</h2>
+            <h1 class="fw-bold mb-2">{{ item.title }}</h1>
 
-            <p class="text-muted mb-1">
+            <p class="text-muted mb-3">
                 {{ item.media_type|title }}
-                {% if item.release_year %}• {{ item.release_year }}{% endif %}
-                {% if item.status %}• {{ item.status }}{% endif %}
+                {% if item.release_year %} • {{ item.release_year }}{% endif %}
+                {% if item.status %} • {{ item.status }}{% endif %}
             </p>
 
             {% if item.rating %}
-                <p><strong>Rating:</strong> {{ item.rating }}/10</p>
-            {% endif %}
-
-            {% if item.duration %}
-                <p>
-                    <strong>
-                        {% if item.media_type in 'movie' 'tv' %}
-                            Duration:
-                        {% elif item.media_type == 'anime' %}
-                            Episode Duration:
-                        {% elif item.media_type == 'manga' %}
-                            Chapters:
-                        {% endif %}
-                    </strong>
-                    {{ item.duration }}
-                </p>
-            {% endif %}
-
-            {% if item.episodes %}
-                <p><strong>Episodes:</strong> {{ item.episodes }}</p>
+                <div class="rating-box mb-3">
+                    ⭐ {{ item.rating }}/10
+                </div>
             {% endif %}
 
             {% if item.genres %}
-                <p><strong>Genres:</strong>
+                <div class="mb-3">
                     {% for g in item.genres %}
-                        <span class="badge bg-secondary">{{ g }}</span>
+                        <span class="badge genre-badge">{{ g }}</span>
                     {% endfor %}
-                </p>
+                </div>
             {% endif %}
 
             {% if item.overview %}
-                <h5 class="mt-3">Overview</h5>
-                <p>{{ item.overview }}</p>
+                <h5 class="mt-4">Overview</h5>
+                <p class="overview-text">{{ item.overview }}</p>
             {% endif %}
         </div>
+
     </div>
 </div>
-{% endblock content %}
+
+{% endblock %}

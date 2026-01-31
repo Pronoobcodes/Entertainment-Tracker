@@ -1,14 +1,14 @@
 <div class="col-6 col-sm-4 col-md-3 col-lg-2">
-    <a href="{% url 'detail' source=item.source external_id=item.external_id %}" class="text-decoration-none">
+    <a href="{% url 'detail' item.source item.external_id %}" class="card-link">
         <div class="movie-card position-relative">
 
             {% if item.poster %}
-                <img src="{{ item.poster }}" class="w-100 poster">
+                <img src="{{ item.poster }}" class="poster">
             {% else %}
-                <div class="poster bg-secondary"></div>
+                <div class="poster placeholder"></div>
             {% endif %}
 
-            <span class="badge bg-danger badge-source">
+            <span class="badge badge-source bg-danger">
                 {{ item.source|upper }}
             </span>
 
@@ -16,13 +16,9 @@
                 <div class="movie-title">{{ item.title }}</div>
                 <div class="movie-meta">
                     {{ item.media_type|title }}
-                    {% if item.release_year %}
-                        • {{ item.release_year }}
-                    {% endif %}
+                    {% if item.release_year %} • {{ item.release_year }}{% endif %}
                 </div>
             </div>
-
         </div>
     </a>
 </div>
-
