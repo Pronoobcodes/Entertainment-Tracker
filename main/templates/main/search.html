@@ -1,23 +1,35 @@
 {% extends "main/body.html" %}
 {% block content %}
-    <div class="container-fluid mt-4 px-4">
+<div class="container-fluid px-4 py-5">
+    {% if results %}
+        <div class="mb-4">
+            <h3 class="fw-bold mb-1">
+                <i class="fas fa-search me-2 text-primary"></i>Search Results
+            </h3>
+            <p class="text-secondary">Found {{ results|length }} result{{ results|length|pluralize }} for "{{ query }}"</p>
+        </div>
 
-        {% if results %}
         <div class="row g-4">
-
             {% for item in results %}
                 {% include "main/card.html" %}
             {% endfor %}
-
         </div>
 
-        {% elif query %}
-            <p class="text-center mt-5">No results found.</p>
-        {% else %}
-            <p class="text-center mt-5 text-secondary">
-                Search movies, anime, books, and manga
-            </p>
-        {% endif %}
+    {% elif query %}
+        <div class="empty-state py-5">
+            <i class="fas fa-search text-secondary mb-3" style="font-size: 3rem;"></i>
+            <h4 class="text-secondary mb-2">No results found</h4>
+            <p class="text-secondary">We couldn't find any results for "<strong>{{ query }}</strong>"</p>
+            <p class="text-secondary">Try searching with different keywords</p>
+        </div>
 
-    </div>
+    {% else %}
+        <div class="empty-state py-5">
+            <i class="fas fa-search text-secondary mb-3" style="font-size: 3rem;"></i>
+            <h4 class="text-secondary mb-2">Search Entertainment</h4>
+            <p class="text-secondary">Browse movies, TV series, anime, and manga</p>
+            <p class="text-secondary">Use the search bar in the navigation to get started</p>
+        </div>
+    {% endif %}
+</div>
 {% endblock content %}

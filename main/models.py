@@ -6,22 +6,18 @@ MEDIA_TYPE_CHOICES = [
     ("movie", "Movie"),
     ("tv", "TV Series"),
     ("anime", "Anime"),
-    ("book", "Book"),
     ("manga", "Manga"),
 ]
 
 SOURCE_CHOICES = [
     ("tmdb", "TMDb"),
     ("mal", "MyAnimeList"),
-    ("google_books", "Google Books"),
     ("mangadex", "MangaDex"),
 ]
 
 STATUS_CHOICES = [
     ("watching", "Watching / Reading"),
     ("completed", "Completed"),
-    ("on_hold", "On Hold"),
-    ("dropped", "Dropped"),
     ("plan", "Plan to Watch / Read"),
 ]
 
@@ -50,11 +46,6 @@ class UserMedia(models.Model):
     media = models.ForeignKey(Media, on_delete=models.CASCADE)
 
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="plan")
-
-    current_season = models.PositiveIntegerField(default=0)
-    current_episode = models.PositiveIntegerField(default=0)
-
-    rating = models.FloatField(null=True, blank=True)
     notes = models.TextField(blank=True)
 
     added_at = models.DateTimeField(auto_now_add=True)

@@ -1,0 +1,128 @@
+{% extends "main/body.html" %}
+{% block content %}
+
+<div class="container-fluid px-4 py-5">
+    <!-- Profile Header -->
+    <div class="profile-header">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h2 class="mb-2 fw-bold">
+                    <i class="fas fa-user-circle me-2 text-primary"></i>
+                    {{ request.user.full_name|default:request.user.username }}
+                </h2>
+                <p class="text-secondary mb-0">
+                    <i class="fas fa-envelope me-2"></i>{{ request.user.email }}
+                </p>
+            </div>
+            <div class="col-md-4 text-md-end">
+                <a href="{% url 'update_user' %}" class="btn btn-primary me-2">
+                    <i class="fas fa-edit me-2"></i>Edit Profile
+                </a>
+                <a href="{% url 'change_password' %}" class="btn btn-outline-primary">
+                    <i class="fas fa-lock me-2"></i>Change Password
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Library Sections -->
+    {% for section in sections %}
+
+        <div class="profile-section">
+            <div class="d-flex align-items-center mb-4">
+                <i class="fas fa-{{ section.icon }} me-2 text-primary" style="font-size: 1.3rem;"></i>
+                <h4 class="mb-0">{{ section.title }}</h4>
+                <span class="badge bg-primary ms-2">{{ section.items|length }}</span>
+            </div>
+
+            {% if section.items %}
+                <div class="row g-4">
+                    {% for entry in section.items %}
+                        <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+                            <div class="media-item">
+                                <a href="{% url 'detail' entry.media.source entry.media.external_id %}" class="card-link">
+                                    <div class="movie-card">
+                                        {% if entry.media.poster %}
+                                            <img src="{{ entry.media.poster }}" class="poster" alt="{{ entry.media.title }}">
+                                        {% else %}
+                                            <div class="poster placeholder"></div>
+                                        {% endif %}
+
+                                        <div class="movie-info">
+                                            <div class="movie-title">{{ entry.media.title }}</div>
+                                            <div class="movie-meta">
+                                                {{ entry.media.media_type|title }}
+                                                {% if entry.media.release_year %}• {{ entry.media.release_year }}{% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </a>
+                                
+                                <!-- Status Change -->
+                                <div class="mt-3 btn-group w-100" role="group">
+                                    {% if section.title != "Watching / Reading" %}
+                                        <a href="{% url 'update_status' entry.media.id 'watching' %}" 
+                                           class="btn btn-sm btn-outline-primary" 
+                                           title="Mark as Watching/Reading">
+                                            <i class="fas fa-play-circle"></i>
+                                        </a>
+                                    {% endif %}
+                                    
+                                    {% if section.title != "Completed" %}
+                                        <a href="{% url 'update_status' entry.media.id 'completed' %}" 
+                                           class="btn btn-sm btn-outline-success" 
+                                           title="Mark as Completed">
+                                            <i class="fas fa-check-circle"></i>
+                                        </a>
+                                    {% endif %}
+                                    
+                                    {% if section.title != "Plan to Watch / Read" %}
+                                        <a href="{% url 'update_status' entry.media.id 'plan' %}" 
+                                           class="btn btn-sm btn-outline-warning" 
+                                           title="Add to Plan to Watch">
+                                            <i class="fas fa-bookmark"></i>
+                                        </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-inbox text-secondary mb-3" style="font-size: 2rem;"></i>
+                    <p class="text-secondary">Nothing in this category yet</p>
+                </div>
+            {% endif %}
+        </div>
+
+    {% endfor %}
+
+    <!-- Stats -->
+    <div class="row g-3 mt-5">
+        <div class="col-md-4">
+            <div class="profile-section text-center">
+                <i class="fas fa-film text-primary mb-3" style="font-size: 2rem;"></i>
+                <h3 class="fw-bold">{{ watching|length }}</h3>
+                <p class="text-secondary mb-0">Currently Watching</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="profile-section text-center">
+                <i class="fas fa-check-circle text-success mb-3" style="font-size: 2rem;"></i>
+                <h3 class="fw-bold">{{ completed|length }}</h3>
+                <p class="text-secondary mb-0">Completed</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="profile-section text-center">
+                <i class="fas fa-bookmark text-warning mb-3" style="font-size: 2rem;"></i>
+                <h3 class="fw-bold">{{ plan|length }}</h3>
+                <p class="text-secondary mb-0">Plan to Watch</p>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}

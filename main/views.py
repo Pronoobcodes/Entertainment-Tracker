@@ -93,44 +93,125 @@ def category_view(request, category):
     })
 
 
+def tmdb_detail_view(request, media_type, external_id):
+    return detail_view(
+        request,
+        source="tmdb",
+        external_id=external_id,
+        media_type=media_type,
+    )
+
+
 def detail_view(request, source, external_id, media_type=None):
+    if source not in ("tmdb", "mal", "mangadex"):
+        return render(request, "404.html", status=404)
+
     item = get_details(source, external_id, media_type)
 
     if not item:
         return render(request, "404.html", status=404)
 
+    # Check if item is in user's library
+    in_library = False
+    current_status = None
+
+    if request.user.is_authenticated:
+        media = Media.objects.filter(source=source, external_id=external_id).first()
+        if media:
+            user_media = UserMedia.objects.filter(user=request.user, media=media).first()
+            if user_media:
+                in_library = True
+                current_status = user_media.status
+
     return render(request, "main/detail.html", {
         "item": item,
+        "in_library": in_library,
+        "current_status": current_status
     })
 
 
 def save_media_from_api(source, external_id, media_type=None):
-    media, created = Media.objects.get_or_create(
-        source=source,
-        external_id=external_id,
-    )
-
-    if not created:
-        return media
-
+    # Fetch details first to ensure we have data for creation (avoids IntegrityError)
     data = get_details(source, external_id, media_type)
 
-    media.title = data["title"]
-    media.media_type = data["media_type"]
-    media.release_year = data.get("release_year")
-    media.poster = data.get("poster")
-    media.save()
+    if not data:
+        return None
+
+    # Use update_or_create to handle both creation and updates atomically
+    media, created = Media.objects.update_or_create(
+        source=source,
+        external_id=external_id,
+        defaults={
+            "title": data.get("title"),
+            "media_type": data.get("media_type", media_type),
+            "release_year": data.get("release_year"),
+            "poster": data.get("poster"),
+        }
+    )
 
     return media
 
 
 @login_required(login_url="login")
-def add_to_library(request, source, external_id, media_type=None):
+def add_to_library(request, source=None, external_id=None, media_type=None):
+    # Handle both URL parameter styles
+    if source is None or external_id is None:
+        return render(request, "main/404.html", status=404)
+    
     media = save_media_from_api(source, external_id, media_type)
+
+    if not media:
+        return render(request, "main/404.html", status=404)
 
     UserMedia.objects.get_or_create(
         user=request.user,
         media=media,
+        defaults={"status": "plan"}
     )
 
     return redirect("detail", source=source, external_id=external_id)
+
+
+@login_required(login_url="login")
+def tmdb_add_view(request, media_type, external_id):
+    return add_to_library(
+        request,
+        source="tmdb",
+        external_id=external_id,
+        media_type=media_type,
+    )
+
+
+@login_required(login_url="login")
+def update_status(request, media_id, status):
+    user_media = get_object_or_404(
+        UserMedia,
+        user=request.user,
+        media_id=media_id
+    )
+    user_media.status = status
+    user_media.save()
+    return redirect("profile")
+
+
+@login_required(login_url="login")
+def profile(request):
+    user_media = UserMedia.objects.filter(user=request.user).select_related('media')
+    
+    watching = [m for m in user_media if m.status == 'watching']
+    completed = [m for m in user_media if m.status == 'completed']
+    plan = [m for m in user_media if m.status == 'plan']
+    
+    # Pass sections to template for cleaner rendering
+    sections = [
+        {"title": "Watching / Reading", "items": watching, "icon": "play-circle"},
+        {"title": "Completed", "items": completed, "icon": "check-circle"},
+        {"title": "Plan to Watch / Read", "items": plan, "icon": "bookmark"},
+    ]
+    
+    return render(request, "users/profile.html", {
+        "sections": sections,
+        "watching": watching,
+        "completed": completed,
+        "plan": plan,
+    })

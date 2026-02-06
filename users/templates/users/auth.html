@@ -1,62 +1,93 @@
 {% extends "main/body.html" %}
 {% block content %}
 
+<div class="auth-container">
+    <div class="auth-box">
+        <div class="text-center mb-4">
+            <i class="fas fa-film text-primary" style="font-size: 2.5rem;"></i>
+            <h2 class="mt-3">
+                {% if page == 'login' %}Login{% else %}Sign Up{% endif %}
+            </h2>
+            <p class="text-secondary">
+                {% if page == 'login' %}
+                    Sign in to track your entertainment
+                {% else %}
+                    Create account to start tracking
+                {% endif %}
+            </p>
+        </div>
 
+        <form method="POST">
+            {% csrf_token %}
 
-<div class="auth-box">
-
-    <h3 class="text-center mb-3">
-        {% if page == 'login' %}Login{% else %}Register{% endif %}
-    </h3>
-
-    <p class="text-center text-secondary mb-4">
-        {% if page == 'login' %}
-            Login to track your entertainment
-        {% else %}
-            Create your Tracker account
-        {% endif %}
-    </p>
-
-    <form method="POST">
-        {% csrf_token %}
-
-        {% if page == 'login' %}
-            <div class="mb-3">
-                <input class="form-control" name="email" placeholder="Email Address">
-            </div>
-
-            <div class="mb-3">
-                <input class="form-control" type="password" name="password" placeholder="Password">
-            </div>
-
-        {% else %}
-            {% for field in form %}
+            {% if page == 'login' %}
                 <div class="mb-3">
-                    <label for="{{ field.name }}">{{ field.label }}</label>
-                    {{ field }}
-                    {% if field.errors %}
-                        <small class="text-danger">{{ field.errors }}</small>
-                    {% endif %}
+                    <label class="form-label">Email Address</label>
+                    <input class="form-control" type="email" name="email" placeholder="your@email.com" required>
                 </div>
-            {% endfor %}
-        {% endif %}
 
-        <button class="btn btn-danger mt-3">
-            {% if page == 'login' %}Login{% else %}Register{% endif %}
-        </button>
-    </form>
+                <div class="mb-3">
+                    <label class="form-label">Password</label>
+                    <input class="form-control" type="password" name="password" placeholder="••••••••" required>
+                </div>
 
-    <div class="text-center mt-3">
-        {% if page == 'login' %}
-            <span>New here?</span>
-            <a href="{% url 'register' %}" class="auth-link">Create account</a>
-        {% else %}
-            <span>Already have an account?</span>
-            <a href="{% url 'login' %}" class="auth-link">Login</a>
-        {% endif %}
+                <button type="submit" class="btn btn-primary w-100 mb-3">
+                    <i class="fas fa-sign-in-alt me-2"></i>Login
+                </button>
+
+            {% else %}
+                {% for field in form %}
+                    <div class="mb-3">
+                        <label class="form-label">{{ field.label }}</label>
+                        {{ field }}
+                        {% if field.errors %}
+                            <small class="d-block text-danger mt-1">
+                                {{ field.errors|striptags }}
+                            </small>
+                        {% endif %}
+                        {% if field.help_text %}
+                            <small class="form-text text-muted d-block mt-1">
+                                {{ field.help_text|safe }}
+                            </small>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+
+                <button type="submit" class="btn btn-primary w-100 mb-3">
+                    <i class="fas fa-user-plus me-2"></i>Create Account
+                </button>
+            {% endif %}
+
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} mt-3">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        </form>
+
+        <hr class="my-4">
+
+        <div class="text-center">
+            {% if page == 'login' %}
+                <p class="mb-0 text-secondary">
+                    Don't have an account?
+                    <a href="{% url 'register' %}" class="link-primary fw-bold text-decoration-none">
+                        Sign up here
+                    </a>
+                </p>
+            {% else %}
+                <p class="mb-0 text-secondary">
+                    Already have an account?
+                    <a href="{% url 'login' %}" class="link-primary fw-bold text-decoration-none">
+                        Login here
+                    </a>
+                </p>
+            {% endif %}
+        </div>
     </div>
-
 </div>
 
+{% endblock %}
 
-{% endblock content %}

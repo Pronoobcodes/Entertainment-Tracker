@@ -2,62 +2,124 @@
 {% block content %}
 
 <div class="container py-5">
-    <div class="row g-4">
+    <div class="row g-5">
 
         <!-- Poster -->
         <div class="col-md-4">
-            <div class="poster-box">
+            <div class="poster-box mb-4">
                 {% if item.poster %}
-                    <img src="{{ item.poster }}" class="img-fluid rounded shadow-lg">
+                    <img src="{{ item.poster }}" class="img-fluid rounded shadow-lg" alt="{{ item.title }}">
                 {% else %}
-                    <div class="poster-placeholder"></div>
+                    <div class="poster-placeholder rounded"></div>
                 {% endif %}
             </div>
 
-            <form method="POST" action="{% url 'add_to_library' item.source item.external_id %}" class="mt-3">
-                {% csrf_token %}
-                <button class="btn btn-danger w-100">
-                    ➕ Add to Library
-                </button>
-            </form>
+            <!-- Add to Library Form -->
+                {% if in_library %}
+                    <div class="mb-3">
+                        <button class="btn btn-success w-100 mb-2" disabled>
+                            <i class="fas fa-check"></i> Saved as {{ current_status|title }}
+                        </button>
+                        <a href="{% url 'profile' %}" class="btn btn-outline-secondary w-100">Go to Library</a>
+                    </div>
+                {% else %}
+                    {% if item.source == "tmdb" %}
+                    <form method="POST" action="{% url 'tmdb_add' item.media_type item.external_id %}" class="mb-3">
+                    {% else %}
+                    <form method="POST" action="{% url 'add_to_library' item.source item.external_id %}" class="mb-3">
+                    {% endif %}
+                        {% csrf_token %}
+                        {% if request.user.is_authenticated %}
+                            <button type="submit" class="btn btn-primary w-100 mb-2">
+                                <i class="fas fa-plus"></i> Add to Library
+                            </button>
+                        {% else %}
+                            <a href="{% url 'login' %}" class="btn btn-primary w-100 mb-2">
+                                <i class="fas fa-sign-in-alt"></i> Login to Add
+                            </a>
+                        {% endif %}
+                    </form>
+                {% endif %}
         </div>
 
         <!-- Info -->
         <div class="col-md-8">
-            <h1 class="fw-bold mb-2">{{ item.title }}</h1>
+            <h1 class="fw-bold mb-2 display-5">{{ item.title }}</h1>
 
-            <p class="text-muted mb-3">
-                {{ item.media_type|title }}
-                {% if item.release_year %} • {{ item.release_year }}{% endif %}
-                {% if item.status %} • {{ item.status }}{% endif %}
+            <p class="text-secondary mb-3 fs-5">
+                <span class="badge bg-secondary">{{ item.media_type|upper }}</span>
+                {% if item.release_year %}
+                    <span class="text-secondary ms-2">• {{ item.release_year }}</span>
+                {% endif %}
+                {% if item.status %}
+                    <span class="badge bg-info ms-2">{{ item.status|title }}</span>
+                {% endif %}
             </p>
 
+            <!-- Rating -->
             {% if item.rating %}
-                <div class="rating-box mb-3">
-                    ⭐ {{ item.rating }}/10
+                <div class="rating-box mb-4">
+                    <span class="fs-5">
+                        <i class="fas fa-star" style="color: #ffc107;"></i> 
+                        <strong>{{ item.rating }}/10</strong>
+                    </span>
                 </div>
             {% endif %}
 
+            <!-- Genres -->
             {% if item.genres %}
-                <div class="mb-3">
-                    {% for g in item.genres %}
-                        <span class="badge genre-badge">{{ g }}</span>
-                    {% endfor %}
+                <div class="mb-4">
+                    <h6 class="text-secondary mb-2">Genres</h6>
+                    <div>
+                        {% for g in item.genres %}
+                            <span class="badge border border-secondary text-secondary genre-badge me-2 mb-2">{{ g }}</span>
+                        {% endfor %}
+                    </div>
                 </div>
             {% endif %}
 
+            <!-- Overview -->
             {% if item.overview %}
-                <h5 class="mt-4">Overview</h5>
-                <p class="overview-text">{{ item.overview }}</p>
+                <div class="mb-4">
+                    <h5 class="fw-bold mb-3">Synopsis</h5>
+                    <p class="overview-text lh-lg">{{ item.overview }}</p>
+                </div>
             {% endif %}
-            {% if item.media_type == "movie" %}
-                <p><strong>Duration:</strong> {{ item.duration }} mins</p>
-            {% elif item.media_type == "tv" %}
-                <p><strong>Episodes:</strong> {{ item.episodes }}</p>
-                {% if item.duration %}
-                    <p><strong>Episode Runtime:</strong> {{ item.duration }} mins</p>
-                {% endif %}
-            {% endif %}
+
+            <!-- Details -->
+            <div class="details-section">
+                <h5 class="fw-bold mb-3">Details</h5>
+                <div class="row">
+                    {% if item.media_type == "movie" %}
+                        {% if item.duration %}
+                            <div class="col-md-6 mb-3">
+                                <span class="text-secondary">Duration</span>
+                                <p class="fs-5">{{ item.duration }} minutes</p>
+                            </div>
+                        {% endif %}
+                    {% elif item.media_type == "tv" %}
+                        {% if item.episodes %}
+                            <div class="col-md-6 mb-3">
+                                <span class="text-secondary">Episodes</span>
+                                <p class="fs-5">{{ item.episodes }}</p>
+                            </div>
+                        {% endif %}
+                        {% if item.duration %}
+                            <div class="col-md-6 mb-3">
+                                <span class="text-secondary">Episode Runtime</span>
+                                <p class="fs-5">{{ item.duration }} minutes</p>
+                            </div>
+                        {% endif %}
+                    {% elif item.media_type == "anime" %}
+                        {% if item.episodes %}
+                            <div class="col-md-6 mb-3">
+                                <span class="text-secondary">Episodes</span>
+                                <p class="fs-5">{{ item.episodes }}</p>
+                            </div>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            </div>
         </div>
 
     </div>

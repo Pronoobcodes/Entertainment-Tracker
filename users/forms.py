@@ -6,6 +6,17 @@ class CustomRegistrationForm(UserCreationForm):
         model = CustomUser
         fields = ['username', 'full_name', 'email', 'password1', 'password2']
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        for field in self.fields.values():
+            field.widget.attrs.update({
+                'class': 'form-control',
+                'placeholder': field.label
+            })
+            field.label = ''
+
+
 class ChangePasswordForm(SetPasswordForm):
     class Meta:
         model = CustomUser

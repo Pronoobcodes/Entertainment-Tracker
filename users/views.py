@@ -2,9 +2,11 @@ from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
 from django.utils.http import url_has_allowed_host_and_scheme
+from django.contrib.auth.decorators import login_required
 from django.conf import settings
 from urllib.parse import urlparse
 from .forms import CustomRegistrationForm, ChangePasswordForm
+from main.models import UserMedia
 
 
 def register(request):
@@ -15,7 +17,7 @@ def register(request):
             user = form.save(commit=False)
             user.email = user.email.lower()
             user.save()
-            login(request, user)
+            login(request, user, backend="users.backends.EmailBackend")
             return redirect('home')
         messages.error(request, 'Registration failed. Please correct the errors below.')
 
@@ -85,3 +87,25 @@ def update_user(request):
         return render(request, 'users/update_user.html', {'user': request.user})
     messages.error(request, 'You need to be logged in to update your profile.')
     return redirect('login')
+
+
+@login_required(login_url="login")
+def profile(request):
+
+    watching = UserMedia.objects.filter(
+        user=request.user, status="watching"
+    ).select_related("media")
+
+    completed = UserMedia.objects.filter(
+        user=request.user, status="completed"
+    ).select_related("media")
+
+    plan = UserMedia.objects.filter(
+        user=request.user, status="plan"
+    ).select_related("media")
+
+    return render(request, "users/profile.html", {
+        "watching": watching,
+        "completed": completed,
+        "plan": plan,
+    })
