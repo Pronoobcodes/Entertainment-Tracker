@@ -202,7 +202,6 @@ def profile(request):
     completed = [m for m in user_media if m.status == 'completed']
     plan = [m for m in user_media if m.status == 'plan']
     
-    # Pass sections to template for cleaner rendering
     sections = [
         {"title": "Watching / Reading", "items": watching, "icon": "play-circle"},
         {"title": "Completed", "items": completed, "icon": "check-circle"},
