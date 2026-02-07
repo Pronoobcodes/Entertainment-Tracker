@@ -90,22 +90,50 @@ def update_user(request):
 
 
 @login_required(login_url="login")
+@login_required(login_url="login")
 def profile(request):
+    # Get status filter from query params
+    status_filter = request.GET.get("status")
 
-    watching = UserMedia.objects.filter(
-        user=request.user, status="watching"
-    ).select_related("media")
+    # Get all user media
+    watching = UserMedia.objects.filter(user=request.user, status="watching").select_related("media")
+    completed = UserMedia.objects.filter(user=request.user, status="completed").select_related("media")
+    plan = UserMedia.objects.filter(user=request.user, status="plan").select_related("media")
 
-    completed = UserMedia.objects.filter(
-        user=request.user, status="completed"
-    ).select_related("media")
+    # Build sections data
+    sections = [
+        {
+            "title": "Watching / Reading",
+            "icon": "play-circle",
+            "key": "watching",
+            "items": watching
+        },
+        {
+            "title": "Completed",
+            "icon": "check-circle",
+            "key": "completed",
+            "items": completed
+        },
+        {
+            "title": "Plan to Watch / Read",
+            "icon": "bookmark",
+            "key": "plan",
+            "items": plan
+        }
+    ]
 
-    plan = UserMedia.objects.filter(
-        user=request.user, status="plan"
-    ).select_related("media")
+    # Filter sections if status is specified
+    if status_filter:
+        sections = [s for s in sections if s["key"] == status_filter]
 
+    # Calculate totals for stats
+    all_items = UserMedia.objects.filter(user=request.user).select_related("media")
+    
     return render(request, "users/profile.html", {
+        "sections": sections,
         "watching": watching,
         "completed": completed,
         "plan": plan,
+        "current_filter": status_filter,
+        "all_items": all_items,
     })

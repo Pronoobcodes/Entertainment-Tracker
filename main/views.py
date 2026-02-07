@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
+from django.utils.http import url_has_allowed_host_and_scheme
 from datetime import datetime
 
 from .models import Media, UserMedia
@@ -216,27 +217,40 @@ def update_progress(request, media_id):
         user_media.progress = new_progress
         user_media.save()
         
-        return redirect("detail", source=user_media.media.source, external_id=user_media.media.external_id)
+        # Redirect back to profile if coming from profile, otherwise to detail
+        next_url = request.GET.get("next")
+        if next_url and url_has_allowed_host_and_scheme(next_url, allowed_hosts=None):
+            return redirect(next_url)
+        
+        # Default: return to profile
+        return redirect("profile")
     return redirect("home")
 
 
 @login_required(login_url="login")
 def profile(request):
+    status_filter = request.GET.get('status')
     user_media = UserMedia.objects.filter(user=request.user).select_related('media')
     
     watching = [m for m in user_media if m.status == 'watching']
     completed = [m for m in user_media if m.status == 'completed']
     plan = [m for m in user_media if m.status == 'plan']
     
-    sections = [
-        {"title": "Watching / Reading", "items": watching, "icon": "play-circle"},
-        {"title": "Completed", "items": completed, "icon": "check-circle"},
-        {"title": "Plan to Watch / Read", "items": plan, "icon": "bookmark"},
+    all_sections = [
+        {"key": "watching", "title": "Watching / Reading", "items": watching, "icon": "play-circle"},
+        {"key": "completed", "title": "Completed", "items": completed, "icon": "check-circle"},
+        {"key": "plan", "title": "Plan to Watch / Read", "items": plan, "icon": "bookmark"},
     ]
+
+    if status_filter in ['watching', 'completed', 'plan']:
+        sections = [s for s in all_sections if s['key'] == status_filter]
+    else:
+        sections = all_sections
     
     return render(request, "users/profile.html", {
         "sections": sections,
         "watching": watching,
         "completed": completed,
         "plan": plan,
+        "current_filter": status_filter,
     })

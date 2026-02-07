@@ -25,6 +25,49 @@
         </div>
     </div>
 
+     <div class="row g-3 mt-5">
+        <div class="col-md-4">
+            <div class="profile-section text-center">
+                <i class="fas fa-film text-primary mb-3" style="font-size: 2rem;"></i>
+                <h3 class="fw-bold">{{ watching|length }}</h3>
+                <p class="text-secondary mb-0">Currently Watching</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="profile-section text-center">
+                <i class="fas fa-check-circle text-success mb-3" style="font-size: 2rem;"></i>
+                <h3 class="fw-bold">{{ completed|length }}</h3>
+                <p class="text-secondary mb-0">Completed</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="profile-section text-center">
+                <i class="fas fa-bookmark text-warning mb-3" style="font-size: 2rem;"></i>
+                <h3 class="fw-bold">{{ plan|length }}</h3>
+                <p class="text-secondary mb-0">Plan to Watch</p>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Filter Navigation -->
+    <div class="mb-4">
+        <ul class="nav nav-pills">
+            <li class="nav-item">
+                <a class="nav-link {% if not current_filter %}active{% endif %}" href="{% url 'profile' %}">All</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if current_filter == 'watching' %}active{% endif %}" href="?status=watching">Watching</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if current_filter == 'completed' %}active{% endif %}" href="?status=completed">Completed</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if current_filter == 'plan' %}active{% endif %}" href="?status=plan">Plan to Watch</a>
+            </li>
+        </ul>
+    </div>
+
     <!-- Library Sections -->
     {% for section in sections %}
 
@@ -54,34 +97,82 @@
                                                 {{ entry.media.media_type|title }}
                                                 {% if entry.media.release_year %}• {{ entry.media.release_year }}{% endif %}
                                             </div>
+                                            
+                                            <!-- Rating and Genres -->
+                                            {% if entry.media.rating %}
+                                                <div class="movie-meta text-warning mt-1">
+                                                    <small><i class="fas fa-star me-1"></i>{{ entry.media.rating }}/10</small>
+                                                </div>
+                                            {% endif %}
+                                            
+                                            {% if entry.media.media_type == 'tv' or entry.media.media_type == 'anime' %}
+                                                <div class="movie-meta text-info mt-1">
+                                                    <small><i class="fas fa-play-circle me-1"></i> {{ entry.progress|default:0 }} / {{ entry.media.total_episodes|default:"?" }} eps</small>
+                                                </div>
+                                            {% endif %}
                                         </div>
                                     </div>
                                 </a>
                                 
-                                <!-- Status Change -->
-                                <div class="mt-3 btn-group w-100" role="group">
-                                    {% if section.title != "Watching / Reading" %}
-                                        <a href="{% url 'update_status' entry.media.id 'watching' %}" 
-                                           class="btn btn-sm btn-outline-primary" 
-                                           title="Mark as Watching/Reading">
-                                            <i class="fas fa-play-circle"></i>
-                                        </a>
-                                    {% endif %}
-                                    
-                                    {% if section.title != "Completed" %}
-                                        <a href="{% url 'update_status' entry.media.id 'completed' %}" 
-                                           class="btn btn-sm btn-outline-success" 
-                                           title="Mark as Completed">
-                                            <i class="fas fa-check-circle"></i>
-                                        </a>
-                                    {% endif %}
-                                    
-                                    {% if section.title != "Plan to Watch / Read" %}
-                                        <a href="{% url 'update_status' entry.media.id 'plan' %}" 
-                                           class="btn btn-sm btn-outline-warning" 
-                                           title="Add to Plan to Watch">
-                                            <i class="fas fa-bookmark"></i>
-                                        </a>
+                                <!-- Status Change & Progress -->
+                                <div class="mt-3">
+                                    <!-- Status Change Buttons -->
+                                    <div class="btn-group w-100 mb-2" role="group">
+                                        {% if section.key != "watching" %}
+                                            <a href="{% url 'update_status' entry.media.id 'watching' %}" 
+                                               class="btn btn-sm btn-outline-primary" 
+                                               title="Mark as Watching/Reading"
+                                               data-bs-toggle="tooltip">
+                                                <i class="fas fa-play-circle"></i> Watching
+                                            </a>
+                                        {% else %}
+                                            <button class="btn btn-sm btn-primary" disabled>
+                                                <i class="fas fa-play-circle"></i> Watching
+                                            </button>
+                                        {% endif %}
+                                        
+                                        {% if section.key != "completed" %}
+                                            <a href="{% url 'update_status' entry.media.id 'completed' %}" 
+                                               class="btn btn-sm btn-outline-success" 
+                                               title="Mark as Completed"
+                                               data-bs-toggle="tooltip">
+                                                <i class="fas fa-check-circle"></i> Done
+                                            </a>
+                                        {% else %}
+                                            <button class="btn btn-sm btn-success" disabled>
+                                                <i class="fas fa-check-circle"></i> Done
+                                            </button>
+                                        {% endif %}
+                                        
+                                        {% if section.key != "plan" %}
+                                            <a href="{% url 'update_status' entry.media.id 'plan' %}" 
+                                               class="btn btn-sm btn-outline-warning" 
+                                               title="Add to Plan to Watch"
+                                               data-bs-toggle="tooltip">
+                                                <i class="fas fa-bookmark"></i> Plan
+                                            </a>
+                                        {% else %}
+                                            <button class="btn btn-sm btn-warning" disabled>
+                                                <i class="fas fa-bookmark"></i> Plan
+                                            </button>
+                                        {% endif %}
+                                    </div>
+
+                                    <!-- Episode Progress for TV/Anime -->
+                                    {% if entry.media.media_type == 'tv' or entry.media.media_type == 'anime' %}
+                                    <form action="{% url 'update_progress' entry.media.id %}" method="POST" class="d-flex gap-2">
+                                        {% csrf_token %}
+                                        <input type="number" name="progress" class="form-control form-control-sm" 
+                                               value="{{ entry.progress|default:0 }}" min="0" 
+                                               {% if entry.media.total_episodes %}max="{{ entry.media.total_episodes }}"{% endif %}
+                                               placeholder="Eps" title="Episode progress">
+                                        {% if entry.media.total_episodes %}
+                                            <span class="align-self-center text-muted small">/ {{ entry.media.total_episodes }}</span>
+                                        {% endif %}
+                                        <button type="submit" class="btn btn-primary btn-sm" title="Save progress">
+                                            <i class="fas fa-save"></i>
+                                        </button>
+                                    </form>
                                     {% endif %}
                                 </div>
                             </div>
@@ -99,30 +190,7 @@
     {% endfor %}
 
     <!-- Stats -->
-    <div class="row g-3 mt-5">
-        <div class="col-md-4">
-            <div class="profile-section text-center">
-                <i class="fas fa-film text-primary mb-3" style="font-size: 2rem;"></i>
-                <h3 class="fw-bold">{{ watching|length }}</h3>
-                <p class="text-secondary mb-0">Currently Watching</p>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="profile-section text-center">
-                <i class="fas fa-check-circle text-success mb-3" style="font-size: 2rem;"></i>
-                <h3 class="fw-bold">{{ completed|length }}</h3>
-                <p class="text-secondary mb-0">Completed</p>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="profile-section text-center">
-                <i class="fas fa-bookmark text-warning mb-3" style="font-size: 2rem;"></i>
-                <h3 class="fw-bold">{{ plan|length }}</h3>
-                <p class="text-secondary mb-0">Plan to Watch</p>
-            </div>
-        </div>
-    </div>
-
+   
 </div>
 
 {% endblock %}
