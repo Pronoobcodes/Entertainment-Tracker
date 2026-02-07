@@ -114,6 +114,7 @@ def detail_view(request, source, external_id, media_type=None):
     # Check if item is in user's library
     in_library = False
     current_status = None
+    user_media = None
 
     if request.user.is_authenticated:
         media = Media.objects.filter(source=source, external_id=external_id).first()
@@ -126,7 +127,8 @@ def detail_view(request, source, external_id, media_type=None):
     return render(request, "main/detail.html", {
         "item": item,
         "in_library": in_library,
-        "current_status": current_status
+        "current_status": current_status,
+        "user_media": user_media,
     })
 
 
@@ -146,6 +148,7 @@ def save_media_from_api(source, external_id, media_type=None):
             "media_type": data.get("media_type", media_type),
             "release_year": data.get("release_year"),
             "poster": data.get("poster"),
+            "total_episodes": data.get("episodes"),
         }
     )
 
@@ -154,20 +157,26 @@ def save_media_from_api(source, external_id, media_type=None):
 
 @login_required(login_url="login")
 def add_to_library(request, source=None, external_id=None, media_type=None):
-    # Handle both URL parameter styles
-    if source is None or external_id is None:
-        return render(request, "main/404.html", status=404)
-    
+    if not source or not external_id:
+        return render(request, "404.html", status=404)
+
     media = save_media_from_api(source, external_id, media_type)
 
-    if not media:
-        return render(request, "main/404.html", status=404)
+    if not media or not media.pk:
+        return render(request, "404.html", status=404)
 
     UserMedia.objects.get_or_create(
         user=request.user,
         media=media,
-        defaults={"status": "plan"}
+        defaults={"status": "plan"},
     )
+
+    if source == "tmdb":
+        return redirect(
+            "tmdb_detail",
+            media_type=media.media_type,
+            external_id=external_id,
+        )
 
     return redirect("detail", source=source, external_id=external_id)
 
@@ -192,6 +201,23 @@ def update_status(request, media_id, status):
     user_media.status = status
     user_media.save()
     return redirect("profile")
+
+
+@login_required(login_url="login")
+def update_progress(request, media_id):
+    if request.method == "POST":
+        user_media = get_object_or_404(UserMedia, user=request.user, media_id=media_id)
+        new_progress = int(request.POST.get("progress", 0))
+        
+        # Basic validation
+        if new_progress < 0:
+            new_progress = 0
+        
+        user_media.progress = new_progress
+        user_media.save()
+        
+        return redirect("detail", source=user_media.media.source, external_id=user_media.media.external_id)
+    return redirect("home")
 
 
 @login_required(login_url="login")

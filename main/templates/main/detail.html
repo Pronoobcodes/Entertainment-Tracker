@@ -4,7 +4,6 @@
 <div class="container py-5">
     <div class="row g-5">
 
-        <!-- Poster -->
         <div class="col-md-4">
             <div class="poster-box mb-4">
                 {% if item.poster %}
@@ -13,33 +12,6 @@
                     <div class="poster-placeholder rounded"></div>
                 {% endif %}
             </div>
-
-            <!-- Add to Library Form -->
-                {% if in_library %}
-                    <div class="mb-3">
-                        <button class="btn btn-success w-100 mb-2" disabled>
-                            <i class="fas fa-check"></i> Saved as {{ current_status|title }}
-                        </button>
-                        <a href="{% url 'profile' %}" class="btn btn-outline-secondary w-100">Go to Library</a>
-                    </div>
-                {% else %}
-                    {% if item.source == "tmdb" %}
-                    <form method="POST" action="{% url 'tmdb_add' item.media_type item.external_id %}" class="mb-3">
-                    {% else %}
-                    <form method="POST" action="{% url 'add_to_library' item.source item.external_id %}" class="mb-3">
-                    {% endif %}
-                        {% csrf_token %}
-                        {% if request.user.is_authenticated %}
-                            <button type="submit" class="btn btn-primary w-100 mb-2">
-                                <i class="fas fa-plus"></i> Add to Library
-                            </button>
-                        {% else %}
-                            <a href="{% url 'login' %}" class="btn btn-primary w-100 mb-2">
-                                <i class="fas fa-sign-in-alt"></i> Login to Add
-                            </a>
-                        {% endif %}
-                    </form>
-                {% endif %}
         </div>
 
         <!-- Info -->
@@ -118,6 +90,50 @@
                             </div>
                         {% endif %}
                     {% endif %}
+                    <div class="col-12 mt-3">
+                        {% if in_library %}
+                            <div class="mb-3">
+                                <button class="btn btn-success w-100 mb-2" disabled>
+                                    <i class="fas fa-check"></i> Saved as {{ current_status|title }}
+                                </button>
+                                <a href="{% url 'profile' %}" class="btn btn-outline-secondary w-100">Go to Library</a>
+                            </div>
+
+                            {% if item.media_type == 'tv' or item.media_type == 'anime' %}
+                            <div class="card p-3 mb-3 bg-light border-0">
+                                <label class="form-label fw-bold small text-secondary">Episode Progress</label>
+                                <form action="{% url 'update_progress' user_media.media.id %}" method="POST" class="d-flex gap-2">
+                                    {% csrf_token %}
+                                    <input type="number" name="progress" class="form-control" value="{{ user_media.progress }}" min="0" {% if item.episodes %}max="{{ item.episodes }}"{% endif %}>
+                                    {% if item.episodes %}
+                                        <span class="align-self-center text-muted">/ {{ item.episodes }}</span>
+                                    {% endif %}
+                                    <button type="submit" class="btn btn-primary btn-sm">
+                                        <i class="fas fa-save"></i>
+                                    </button>
+                                </form>
+                            </div>
+                            {% endif %}
+
+                        {% else %}
+                            {% if item.source == "tmdb" %}
+                            <form method="POST" action="{% url 'tmdb_add' item.media_type item.external_id %}" class="mb-3">
+                            {% else %}
+                            <form method="POST" action="{% url 'add_to_library' item.source item.external_id %}" class="mb-3">
+                            {% endif %}
+                                {% csrf_token %}
+                                {% if request.user.is_authenticated %}
+                                    <button type="submit" class="btn btn-primary w-100 mb-2">
+                                        <i class="fas fa-plus"></i> Add to Library
+                                    </button>
+                                {% else %}
+                                    <a href="{% url 'login' %}" class="btn btn-primary w-100 mb-2">
+                                        <i class="fas fa-sign-in-alt"></i> Login to Add
+                                    </a>
+                                {% endif %}
+                            </form>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
         </div>

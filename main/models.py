@@ -31,6 +31,7 @@ class Media(models.Model):
 
     release_year = models.PositiveIntegerField(null=True, blank=True)
     poster = models.URLField(blank=True)
+    total_episodes = models.PositiveIntegerField(null=True, blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -46,6 +47,7 @@ class UserMedia(models.Model):
     media = models.ForeignKey(Media, on_delete=models.CASCADE)
 
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="plan")
+    progress = models.PositiveIntegerField(default=0)
     notes = models.TextField(blank=True)
 
     added_at = models.DateTimeField(auto_now_add=True)

@@ -12,6 +12,7 @@ urlpatterns = [
     path("tmdb/<str:media_type>/<str:external_id>/", views.tmdb_detail_view, name="tmdb_detail"),
     # Update status for library items
     path("library/<int:media_id>/status/<str:status>/", views.update_status, name="update_status"),
+    path("library/<int:media_id>/progress/", views.update_progress, name="update_progress"),
     # Generic routes for other sources (mal, mangadex)
     path("<str:source>/<str:external_id>/add/", views.add_to_library, name="add_to_library"),
     path("<str:source>/<str:external_id>/", views.detail_view, name="detail"),
