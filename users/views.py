@@ -14,7 +14,7 @@ def register(request):
     if request.method == 'POST':
         form = CustomRegistrationForm(request.POST)
         if form.is_valid():
-            user = form.save(commit=False)
+            user = form.save()
             user.email = user.email.lower()
             user.save()
             login(request, user, backend="users.backends.EmailBackend")
@@ -70,7 +70,7 @@ def logout_view(request):
     logout(request)
     return redirect('login')
 
-
+@login_required(login_url="login")
 def update_user(request):
     if request.user.is_authenticated:
         if request.method == 'POST':
@@ -90,17 +90,13 @@ def update_user(request):
 
 
 @login_required(login_url="login")
-@login_required(login_url="login")
 def profile(request):
-    # Get status filter from query params
     status_filter = request.GET.get("status")
 
-    # Get all user media
     watching = UserMedia.objects.filter(user=request.user, status="watching").select_related("media")
     completed = UserMedia.objects.filter(user=request.user, status="completed").select_related("media")
     plan = UserMedia.objects.filter(user=request.user, status="plan").select_related("media")
 
-    # Build sections data
     sections = [
         {
             "title": "Watching / Reading",
@@ -122,11 +118,9 @@ def profile(request):
         }
     ]
 
-    # Filter sections if status is specified
     if status_filter:
         sections = [s for s in sections if s["key"] == status_filter]
 
-    # Calculate totals for stats
     all_items = UserMedia.objects.filter(user=request.user).select_related("media")
     
     return render(request, "users/profile.html", {
