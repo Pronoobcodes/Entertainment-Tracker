@@ -65,6 +65,11 @@
             <li class="nav-item">
                 <a class="nav-link {% if current_filter == 'plan' %}active{% endif %}" href="?status=plan">Plan to Watch</a>
             </li>
+            <li class="nav-item ms-auto">
+                <a class="nav-link" href="{% url 'recommendations' %}">
+                    <i class="fas fa-lightbulb me-1"></i>Recommendations
+                </a>
+            </li>
         </ul>
     </div>
 
@@ -188,6 +193,53 @@
         </div>
 
     {% endfor %}
+
+    <!-- Recommendations Section -->
+    <div class="recommendations-section mt-5">
+        <h3 class="mb-4 fw-bold">
+            <i class="fas fa-lightbulb me-2 text-warning"></i>Recommended For You
+        </h3>
+
+        {% if empty_reason %}
+            <p class="text-muted mt-4">{{ empty_reason }}</p>
+        {% else %}
+            {% if recommendations %}
+                <div class="recommendations-grid">
+                    {% for rec in recommendations %}
+                    <div class="rec-card card">
+                        <a href="
+                            {% if rec.source == 'tmdb' %}
+                                {% url 'tmdb_detail' media_type=rec.media_type external_id=rec.external_id %}
+                            {% else %}
+                                {% url 'detail' source=rec.source external_id=rec.external_id %}
+                            {% endif %}
+                        " class="rec-link">
+                            {% if rec.poster %}
+                                <img src="{{ rec.poster }}" alt="{{ rec.title }}" class="card-img-top">
+                            {% else %}
+                                <div class="card-img-top bg-secondary d-flex align-items-center justify-content-center" style="height: 300px;">
+                                    <i class="fas fa-image text-white"></i>
+                                </div>
+                            {% endif %}
+                            <h5 class="card-title mt-2">{{ rec.title }}</h5>
+                        </a>
+
+                        <p class="because-of text-muted small">Because you completed <em>{{ rec.because_of }}</em></p>
+
+                        {% if rec.score %}
+                            <span class="score badge bg-warning text-dark">⭐ {{ rec.score|floatformat:1 }}</span>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-inbox text-secondary mb-3" style="font-size: 2rem;"></i>
+                    <p class="text-secondary">No recommendations available yet.</p>
+                </div>
+            {% endif %}
+        {% endif %}
+    </div>
 
     <!-- Stats -->
    

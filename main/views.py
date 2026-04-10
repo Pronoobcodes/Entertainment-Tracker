@@ -9,6 +9,7 @@ from .services.details import get_details
 from .services.tmdb import get_popular_movies, get_popular_series, get_tmdb_genres, tmdb_request
 from .services.mal import get_popular_anime
 from .services.dex import get_popular_manga, get_manga_genres
+from .services.recommendations import get_recommendations_for_media
 
 
 def home(request):
@@ -226,33 +227,4 @@ def update_progress(request, media_id):
         return redirect("profile")
     return redirect("home")
 
-
-@login_required(login_url="login")
-def profile(request):
-    status_filter = request.GET.get('status')
-    user_media = UserMedia.objects.filter(user=request.user).select_related('media')
-    
-    watching = [m for m in user_media if m.status == 'watching']
-    completed = [m for m in user_media if m.status == 'completed']
-    plan = [m for m in user_media if m.status == 'plan']
-    
-    all_sections = [
-        {"key": "watching", "title": "Watching / Reading", "items": watching, "icon": "play-circle"},
-        {"key": "completed", "title": "Completed", "items": completed, "icon": "check-circle"},
-        {"key": "plan", "title": "Plan to Watch / Read", "items": plan, "icon": "bookmark"},
-    ]
-
-    if status_filter in ['watching', 'completed', 'plan']:
-        sections = [s for s in all_sections if s['key'] == status_filter]
-    else:
-        sections = all_sections
-    
-    return render(request, "users/profile.html", {
-        "sections": sections,
-        "watching": watching,
-        "completed": completed,
-        "plan": plan,
-        "current_filter": status_filter,
-    })
-
-
+        

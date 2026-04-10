@@ -425,10 +425,52 @@ body {
     color: #10b981 !important;
 }
 
-/* Auth Form */
-    max-width: 420px;
-    margin: 80px auto;
-    background: #020617;
-    border-radius: 16px;
-    padding: 32px;
+/* Recommendations Section */
+.recommendations-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 1.5rem;
+    margin-top: 2rem;
+}
+
+.rec-card {
+    overflow: hidden;
+    transition: transform 0.2s, box-shadow 0.2s;
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+}
+
+.rec-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.rec-link {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+}
+
+.rec-card img {
+    width: 100%;
+    height: auto;
+    object-fit: cover;
+}
+
+.because-of {
+    font-size: 0.85rem;
+    margin-top: 0.5rem;
+    padding: 0 0.75rem;
+}
+
+.score {
+    display: inline-block;
+    margin-top: 0.5rem;
+    margin-left: 0.75rem;
+}
+
+.rec-card .card-title {
+    padding: 0 0.75rem;
+    font-size: 1rem;
 }
