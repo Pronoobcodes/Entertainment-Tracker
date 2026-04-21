@@ -5,11 +5,7 @@ from .dex import dex_request
 
 
 def get_tmdb_recommendations(external_id, media_type):
-    """
-    TMDB has a native /recommendations endpoint — use it directly.
-    Returns a list of dicts shaped like your other detail results.
-    """
-    data = tmdb_request(f"{media_type}/{external_id}/recommendations")
+    data = tmdb_request(f"/{media_type}/{external_id}/recommendations")
     results = data.get("results", [])
 
     recs = []
@@ -29,11 +25,8 @@ def get_tmdb_recommendations(external_id, media_type):
 
 
 def get_mal_recommendations(external_id):
-    """
-    MAL's recommendations endpoint returns what other users paired this with.
-    """
     data = mal_request(
-        f"anime/{external_id}/recommendations",
+        f"/anime/{external_id}/recommendations",
         params={"limit": 10}
     )
     entries = data.get("data", [])
@@ -55,12 +48,7 @@ def get_mal_recommendations(external_id):
 
 
 def get_mangadex_recommendations(external_id):
-    """
-    MangaDex has no native recommendations endpoint.
-    Strategy: fetch the manga's genres/tags, then search for
-    other manga sharing those tags, excluding the original.
-    """
-    manga_data = dex_request(f"manga/{external_id}", params={"includes[]": "tag"})
+    manga_data = dex_request(f"/manga/{external_id}", params={"includes[]": "tag"})
     attributes = manga_data.get("data", {}).get("attributes", {})
     tags = attributes.get("tags", [])
 
@@ -111,10 +99,6 @@ def get_mangadex_recommendations(external_id):
 
 
 def get_recommendations_for_media(source, external_id, media_type):
-    """
-    Route to the correct recommendation function by source.
-    Returns a list of recommendation dicts, or [] on failure.
-    """
     try:
         if source == "tmdb":
             return get_tmdb_recommendations(external_id, media_type)

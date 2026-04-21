@@ -94,96 +94,60 @@ def update_user(request):
 def profile(request):
     status_filter = request.GET.get("status")
 
-    watching = UserMedia.objects.filter(user=request.user, status="watching").select_related("media")
+    watching  = UserMedia.objects.filter(user=request.user, status="watching").select_related("media")
     completed = UserMedia.objects.filter(user=request.user, status="completed").select_related("media")
-    plan = UserMedia.objects.filter(user=request.user, status="plan").select_related("media")
+    plan      = UserMedia.objects.filter(user=request.user, status="plan").select_related("media")
 
-    sections = [
+    all_sections = [
         {
             "title": "Watching / Reading",
             "icon": "play-circle",
             "key": "watching",
-            "items": watching
-        },
+            "items": watching,          
+        },                              
         {
             "title": "Completed",
             "icon": "check-circle",
             "key": "completed",
-            "items": completed
+            "items": completed,
         },
         {
             "title": "Plan to Watch / Read",
             "icon": "bookmark",
             "key": "plan",
-            "items": plan
-        }
+            "items": plan,
+        },
     ]
 
-    if status_filter:
-        sections = [s for s in sections if s["key"] == status_filter]
-
-    all_items = UserMedia.objects.filter(user=request.user).select_related("media")
-    
-    return render(request, "users/profile.html", {
-        "sections": sections,
-        "watching": watching,
-        "completed": completed,
-        "plan": plan,
-        "current_filter": status_filter,
-        "all_items": all_items,
-    })
-
-
-@login_required(login_url="login")
-def profile(request):
-    status_filter = request.GET.get('status')
-    user_media = UserMedia.objects.filter(user=request.user).select_related('media')
-    
-    watching = [m for m in user_media if m.status == 'watching']
-    completed = [m for m in user_media if m.status == 'completed']
-    plan = [m for m in user_media if m.status == 'plan']
-    
-    all_sections = [
-        {"key": "watching", "title": "Watching / Reading", "items": watching, "icon": "play-circle"},
-        {"key": "completed", "title": "Completed", "items": completed, "icon": "check-circle"},
-        {"key": "plan", "title": "Plan to Watch / Read", "items": plan, "icon": "bookmark"},
-    ]
-
-    if status_filter in ['watching', 'completed', 'plan']:
-        sections = [s for s in all_sections if s['key'] == status_filter]
-    else:
-        sections = all_sections
-    
-    return render(request, "users/profile.html", {
-        "sections": sections,
-        "watching": watching,
-        "completed": completed,
-        "plan": plan,
-        "current_filter": status_filter,
-    })
-
-
-@login_required(login_url="login")
-def recommendations_view(request,):
-    completed = (
-        UserMedia.objects.filter(user=request.user, status="completed")
-        .select_related("media").order_by("-updated_at")
+    sections = (
+        [s for s in all_sections if s["key"] == status_filter]
+        if status_filter else all_sections
     )
 
+
     if not completed.exists():
-        return render(request, "main/recommendations.html", {
+        return render(request, "users/profile.html", {
+            "sections":       sections,
+            "watching":       watching,
+            "completed":      completed,
+            "plan":           plan,
+            "current_filter": status_filter,
             "recommendations": [],
-            "empty_reason": "Complete something first to get personalized recommendations!"
+            "empty_reason":   "Complete something first to get personalized recommendations!",
         })
 
-    tracked_media = set(UserMedia.objects.filter(user=request.user).values_list("media_id", flat=True))
+    tracked_external_ids = set(
+        UserMedia.objects
+        .filter(user=request.user)
+        .values_list("media__external_id", flat=True)
+    )
 
     seen_external_ids = set()
-    recommendations = []
+    recommendations   = []
 
-    for user_media in completed:
+    for user_media in completed[:5]:      
         media = user_media.media
-        recs = get_recommendations_for_media(
+        recs  = get_recommendations_for_media(
             source=media.source,
             external_id=media.external_id,
             media_type=media.media_type,
@@ -192,13 +156,21 @@ def recommendations_view(request,):
         for rec in recs:
             ext_id = rec["external_id"]
 
-            if ext_id in tracked_media or ext_id in seen_external_ids:
+            if ext_id in tracked_external_ids or ext_id in seen_external_ids:
                 continue
 
             seen_external_ids.add(ext_id)
             rec["because_of"] = media.title
             recommendations.append(rec)
-    
+
     recommendations.sort(key=lambda x: x.get("score") or 0, reverse=True)
 
-    return render(request, "main/recommendations.html", {"recommendations": recommendations[:20], "empty_reason": None})
+    return render(request, "users/profile.html", {
+        "sections":        sections,
+        "watching":        watching,
+        "completed":       completed,
+        "plan":            plan,
+        "current_filter":  status_filter,
+        "recommendations": recommendations[:20],
+        "empty_reason":    None,
+    })
